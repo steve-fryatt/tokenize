@@ -1,0 +1,75 @@
+<document title="Tokenize">
+<define name="version" value="">
+<define name="date" value="" length=30 align="right">
+
+
+
+
+<literal mode="Text">
+=============================================================================
+Tokenize - Turn ASCII Files into Tokenized BASIC                 Version $$version$$
+
+(c) Stephen Fryatt, 2014                       $$date$$
+=============================================================================
+
+</literal>
+
+
+
+<chapter title="Licence" file="Licence">
+
+<cite>Tokenize</cite> is licensed under the EUPL, Version&nbsp;1.1 only (the &ldquo;Licence&rdquo;); you may not use this work except in compliance with the Licence.
+
+You may obtain a copy of the Licence at <link ref="#url http://joinup.ec.europa.eu/software/page/eupl">http://joinup.ec.europa.eu/software/page/eupl</link>
+
+Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an &ldquo;<strong>as is</strong>&rdquo; basis, <strong>without warranties or conditions of any kind</strong>, either express or implied.
+
+See the Licence for the specific language governing permissions and limitations under the Licence.
+
+The source for <cite>MenuGen</cite> can be found alongside this binary download, at <link ref="#url http://www.stevefryatt.org.uk/software">http://www.stevefryatt.org.uk/software</link>
+
+</chapter>
+
+
+
+
+<chapter title="Introduction" file="Introduction">
+
+<cite>Tokenize</cite> provides a means of converting ASCII text files into tokenized BASIC.
+
+</chapter>
+
+
+
+
+
+<chapter title="Version History" file="History">
+
+Here is a list of the versions of <cite>Tokenize</cite>, along with all the changes made.
+
+
+<subhead title="0.01 (17 February 2001)">
+
+Initial developments.
+
+
+</chapter>
+
+
+
+
+
+<literal mode="Text">
+
+Updates and Contacting Me
+-------------------------
+
+  If you have any comments about Tokenize, or would like to report any bugs
+  that you find, you can email me at the address below.
+
+  Updates to Tokenize and more software for RISC OS computers can be found
+  on my website at http://www.stevefryatt.org.uk/software/
+
+  Stephen Fryatt
+  email: steve@stevefryatt.org.uk
+</literal>
