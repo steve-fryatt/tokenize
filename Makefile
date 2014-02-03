@@ -134,9 +134,7 @@ endif
 MANSRC := Source
 MANSPR := ManSprite
 
-OBJS := tokenize.o
-
-#data.o menugen.o parse.o stack.o
+OBJS := parse.o tokenize.o
 
 
 # Build everything, but don't package it for release.

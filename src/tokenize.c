@@ -30,21 +30,23 @@
  * Options -v  - Produce verbose output
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
 /* Local source headers. */
 
-//#include "data.h"
-//#include "parse.h"
-//#include "stack.h"
+#include "parse.h"
 
 
-#define MAX_STACK_SIZE 100
+#define MAX_INPUT_LINE_LENGTH 1024
 
 static int verbose_output = 0;
 static int embed_dialogue_names = 0;
+
+
+void tokenize_parse_file(char *in, char *out);
 
 
 int main(int argc, char *argv[])
@@ -71,9 +73,11 @@ int main(int argc, char *argv[])
 	}
 
 	if (param_error) {
-		printf("Usage: menugen <sourcefile> <output> [-d] [-v]\n");
+		printf("Usage: tokenize <sourcefile> <output> [-v]\n");
 		return 1;
 	}
+	
+	tokenize_parse_file(argv[1], argv[2]);
 /*
 	printf("Starting to parse menu definition file...\n");
 	if (parse_process_file(argv[1], verbose_output)) {
@@ -94,3 +98,28 @@ int main(int argc, char *argv[])
 */
 	return 0;
 }
+
+void tokenize_parse_file(char *in, char *out)
+{
+	FILE	*fin;
+	char	line[MAX_INPUT_LINE_LENGTH];
+	bool	assembler = false;
+
+	if (in == NULL || out == NULL)
+		return;
+
+	fin = fopen(in, "r");
+	if (fin == NULL)
+		return;
+
+	while (fgets(line, MAX_INPUT_LINE_LENGTH, fin) != NULL) {
+		printf("Read: %s\n", line);
+		
+		parse_process_line(line, &assembler);
+	}
+
+
+	fclose(fin);
+
+}
+

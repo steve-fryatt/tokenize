@@ -1,0 +1,330 @@
+REM !RunImage for GetFiler
+REM
+REM Save Filer window positions.
+REM (c) Stephen Fryatt, 2001
+REM
+REM 1.01 (8 September 2002)
+:
+ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
+:
+LIBRARY "BASIC:Wimplib"
+:
+PROCinitialise
+:
+ON ERROR IF FNerror(task_name$)=2 THEN quit%=TRUE
+:
+WHILE NOT quit%
+ PROCpoll
+ENDWHILE
+:
+SYS "Wimp_CloseDown"
+:
+END
+:
+:
+:
+:
+DEF PROCpoll
+SYS "Wimp_Poll",poll_mask%,b% TO reason_code%
+:
+CASE reason_code% OF
+ WHEN 0     : IF desktop_saved_sent% THEN PROCprocess_desktop_save_result
+ WHEN 2     : SYS "Wimp_OpenWindow",,b%
+ WHEN 3     : SYS "Wimp_CloseWindow",,b%
+ WHEN 6     : PROChandle_mouse_click_event
+ WHEN 7     : PROCuser_drag_box_end
+ WHEN 8     : PROChandle_key_press_event
+ WHEN 9     : PROChandle_menu_selection_event
+ WHEN 17,18 : PROCreceive_wimp_message
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+DEF PROChandle_mouse_click_event
+CASE b%!12 OF
+ WHEN -2
+  CASE b%!8 OF
+   WHEN 2 : PROCdisplay_bar_menu(icon_bar_menu%,2,0,!b%)
+   WHEN 4 : PROCsend_desktop_save
+  ENDCASE
+ WHEN save_window%
+  CASE b%!8 OF
+   WHEN 64 : IF b%!16=3 PROCstart_save_drag
+   WHEN 4
+    CASE b%!16 OF
+     WHEN 0 : PROCsave_obey_file($FNicon_indirection(save_window%,2))
+     WHEN 1 : SYS "Wimp_CreateMenu",,-1,0,0
+    ENDCASE
+ ENDCASE
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+DEF PROChandle_key_press_event
+IF !b%=save_window% THEN
+ CASE b%!24 OF
+  WHEN 13 : PROCsave_obey_file($FNicon_indirection(save_window%,2))
+  WHEN 27 : SYS "Wimp_CreateMenu",,-1,0,0
+ ENDCASE
+ENDIF
+ENDPROC
+:
+:
+:
+:
+DEF PROChandle_menu_selection_event
+CASE menu_up% OF
+ WHEN icon_bar_menu%
+  CASE !b% OF
+   WHEN 1 : quit%=TRUE
+  ENDCASE
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+DEF PROCreceive_wimp_message
+CASE b%!16 OF
+ WHEN 0 : quit%=TRUE
+ WHEN 2 : PROCsave_file_from_drag
+ WHEN &400C9 : IF b%!20=save_window% THEN SYS "OS_File",6,"Pipe:$.GetFiler"
+ENDCASE
+ENDPROC
+:
+:
+:
+:
+DEF PROCinitialise
+DIM a% 256, b% 4095, q% 256
+:
+task_name$="GetFiler"
+:
+$b%="TASK"
+q%!0=2
+q%!4=&400C9
+q%!8=0
+:
+SYS "Wimp_Initialise",310,!b%,task_name$,q%
+:
+quit%=FALSE
+:
+indirected_data_size%=1024
+DIM indirected_data% indirected_data_size%
+:
+PROCopen_templates("<GetFiler$Dir>.Templates")
+PROCload_template("Info",b%,indirected_data%,indirected_data_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO program_info_window%
+PROCload_template("SaveAs",b%,indirected_data%,indirected_data_size%,-1)
+SYS "Wimp_CreateWindow",,b% TO save_window%
+PROCclose_templates
+:
+SYS "XOS_SWINumberFromString",,"DragASprite_Start" TO ;flags%
+drag_a_sprite%=(flags% AND 1)=0
+SYS "OS_Byte",161,28 TO ,,cmos_28%
+IF (cmos_28% AND %10)=0 THEN drag_a_sprite%=FALSE
+:
+!q%=program_info_window%
+PROCload_menu_block("<GetFiler$Dir>.Menus",q%)
+icon_bar_menu%=!q%
+:
+icon_bar%=FNcreate_standard_bar_icon(-1,"!getfiler")
+desktop_saved_sent%=FALSE
+poll_mask%=1
+ENDPROC
+:
+:
+:
+:
+DEF PROCsend_desktop_save
+save_x%=!b% : save_y%=b%!4
+next_task%=0
+found%=FALSE
+:
+REPEAT
+ SYS "TaskManager_EnumerateTasks",next_task%,b%,16 TO next_task%
+ IF FNzero_string(b%!4)="Filer" THEN found%=TRUE : task_handle%=!b%
+UNTIL next_task%<0 OR found%
+:
+SYS "OS_Find",&83,"Pipe:$.GetFiler" TO file%
+!b%=28
+b%!12=0
+b%!16=&A
+b%!20=file%
+b%!24=0
+SYS "Wimp_SendMessage",17,b%,task_handle%
+desktop_saved_sent%=TRUE
+poll_mask%=0
+ENDPROC
+:
+:
+:
+:
+DEF PROCprocess_desktop_save_result
+desktop_saved_sent%=FALSE
+poll_mask%=1
+SYS "OS_Find",0,file%
+:
+$FNicon_indirection(save_window%,2)="FilerPos"
+PROCopen_window_as_menu_at(save_window%,save_x%,save_y%)
+ENDPROC
+:
+:
+:
+:
+DEF PROCstart_save_drag
+:
+LOCAL ox%,oy%,sprite$
+:
+!q%=save_window%
+SYS "Wimp_GetWindowState",,q%
+ox%=q%!4-q%!20
+oy%=q%!16-q%!24
+q%!4=3
+SYS "Wimp_GetIconState",,q%
+sprite$=FNctrl_string(q%!28)
+q%!4=5
+q%!8=ox%+q%!8
+q%!12=oy%+q%!12
+q%!16=ox%+q%!16
+q%!20=oy%+q%!20
+q%!24=&80000000
+q%!28=&80000000
+q%!32=&7FFFFFFF
+q%!36=&7FFFFFFF
+:
+IF drag_a_sprite% THEN
+ SYS "DragASprite_Start",%11000101,1,sprite$,q%+8,q%+24
+ELSE
+ SYS "Wimp_DragBox",,q%
+ENDIF
+ENDPROC
+:
+:
+:
+:
+DEF PROCuser_drag_box_end
+:
+IF drag_a_sprite% THEN SYS "DragASprite_Stop"
+:
+SYS "Wimp_GetPointerInfo",,q%
+q%!20=q%!12
+q%!24=q%!16
+q%!28=q%!0
+q%!32=q%!4
+q%!12=0
+q%!16=1
+:
+$(q%+44)=FNleaf_name($FNicon_indirection(save_window%,2))+CHR$(0)
+q%!36=0    : REM File size (rubbish)
+q%!40=&FEB : REM File type
+q%!0=(48+LEN($(q%+44))) AND (NOT %11)
+SYS "Wimp_SendMessage",18,q%,q%!20,q%!24
+ENDPROC
+:
+:
+:
+:
+DEF PROCsave_file_from_drag
+PROCsave_obey_file(FNctrl_string(b%+44))
+:
+b%!12=b%!8
+b%!16=3
+SYS "Wimp_SendMessage",18,b%,b%!4
+ENDPROC
+:
+:
+:
+:
+DEF PROCsave_obey_file(file$)
+:
+SYS "OS_Find",&83,file$ TO output%
+SYS "OS_Find",&43,"Pipe:$.GetFiler" TO input%
+WHILE NOT EOF#input%
+ line$=GET$#input%
+ IF LEFT$(line$,13)="Filer_OpenDir" THEN BPUT#output%,line$
+ENDWHILE
+SYS "OS_Find",0,output%
+SYS "OS_Find",0,input%
+SYS "OS_File",18,file$,&FEB
+SYS "Wimp_CreateMenu",,-1,0,0
+ENDPROC
+:
+:
+:
+:
+100 DEF FNctrl_string(string%)
+:
+101 10 REM Return as a BASIC string a control character terminated string.
+:
+102 LOCAL string$
+103 :
+104 WHILE ?string%>=32
+ string$+=CHR$(?string%)
+ string%+=1
+ENDWHILE
+=string$
+:
+:
+:
+:
+REM --------------------------------------------------------------------------------------------------------------------
+:
+:
+:
+:
+DEF PROClink_to_event_v
+:
+REM Assemble a small routine to monitor for keypresses and link it to EventV.
+:
+LOCAL code_size%
+:
+REM Claim space in the RMA for the code: it can't go in our workspace as we want to monitor all the
+REM time, not just when we are paged in.
+:
+code_size%=80
+SYS "OS_Module",6,,,code_size% TO ,,code_block%
+:
+REM Assemble the code.
+:
+P%=code_block%
+L%=code_block%+code_size%
+:
+[OPT %1010
+.down_flag
+  EQUD    0
+
+.up_flag
+  EQUD    0
+
+.mouse_flag
+  EQUD    0
+
+.code
+  STMFD   R13!,{R0,R14}
+  CMP     R0,#11
+  LDMNEFD R13!,{R0,PC}
+
+  MVN     R0,#NOT-1
+  CMP     R1,#1
+  STREQ   R0,down_flag
+  CMP     R2,#&70
+  STRGE   R0,mouse_flag
+
+  CMP     R1,#1
+  LDMEQFD R13!,{R0,PC}
+
+  CMP     R2,#&70
+  STRGE   R0,up_flag
+  LDMFD   R13!,{R0,PC}
+]
+:
+REM Link the code onto the EventV list.
+:
+SYS "OS_Claim",&10,code_block%+12,0
+SYS "OS_Byte",14,&10
+ENDPROC
