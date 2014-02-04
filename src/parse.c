@@ -303,29 +303,29 @@ int parse_match_token(char **buffer)
 	/* Find the first entry in the keyword table that will match. */
 
 	keyword = parse_keyword_index[*start - 'A'];
-	printf ("Try to match on %c, index %d\n", *start, keyword);
+	//printf ("Try to match on %c, index %d\n", *start, keyword);
 	if (keyword == -1)
 		return -1;
 
 	do {
 		char *test = start, *match = parse_keywords[keyword].name;
 
-		printf("Entering loop: keyword=%d, test=%c, match=%c\n", keyword, *test, *match);
+		//printf("Entering loop: keyword=%d, test=%c, match=%c\n", keyword, *test, *match);
 		
 		while (*test == *match && *match != '\0' && *test != '.' && *test >= 'A' && *test <= 'Z') {
-			printf("Comparing test=%c with match=%c\n", *test, *match);
+			//printf("Comparing test=%c with match=%c\n", *test, *match);
 			test++;
 			match++;
 		}
 
-		printf("At end, test=%c and match=%c\n", *test, *match);
+		//printf("At end, test=%c and match=%c\n", *test, *match);
 
 		if (*match == '\0') {
 			result = 0;
 			full = keyword;
 			full_end = test;
 		} else if (*test == '.') {
-			printf("Backstep, test=%c and match=%c\n", *(test - 1), *(match - 1));
+			//printf("Backstep, test=%c and match=%c\n", *(test - 1), *(match - 1));
 			result = *(match - 1) - *(test - 1);
 			if ((test - start) >= parse_keywords[keyword].abbrev) {
 				partial = keyword;
@@ -335,10 +335,10 @@ int parse_match_token(char **buffer)
 			result = *match - *test;
 		}
 		
-		printf("result=%d\n", result);
+		//printf("result=%d\n", result);
 		
 		keyword++;
-	} while (result < 0);
+	} while (result <= 0);
 
 	if (full != -1) {
 		*buffer = full_end;
