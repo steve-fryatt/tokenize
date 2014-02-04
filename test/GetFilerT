@@ -322,10 +322,13 @@ L%=code_block%+code_size%
   STRGE   R0,up_flag
   LDMFD   R13!,{R0,PC}
 ]
-I. IN. INS. INST.
 :
 REM Link the code onto the EventV list.
 :
 SYS "OS_Claim",&10,code_block%+12,0
 SYS "OS_Byte",14,&10
 ENDPROC
+
+I. IN. INS. INST.
+OR. OR OR.
+NOT. NOT
