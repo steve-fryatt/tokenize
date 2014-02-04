@@ -254,7 +254,7 @@ static int parse_keyword_index[] = {
 static char parse_buffer[MAX_TOKENISED_LINE];
 
 
-int parse_match_token(char **buffer);
+static int parse_match_token(char **buffer);
 
 /**
  * Parse a line of BASIC, returning a pointer to the tokenised form which will
@@ -350,7 +350,18 @@ char *parse_process_line(char *line, bool *assembler)
 }
 
 
-int parse_match_token(char **buffer)
+/**
+ * Test the contents of *buffer for a valid tokenisable keyword. If one is found,
+ * return its keyword ID and advance *buffer to point to the character after the
+ * end of the match.
+ *
+ * \param **buffer	Pointer to a pointer to the start of the text to match
+ *			(updated on a successful match to point to the character
+ *			after the matched text).
+ * \return		The ID of any matching keyword, or -1 for none found.
+ */
+
+static int parse_match_token(char **buffer)
 {
 	char	*start = *buffer;
 	int	keyword = 0;
@@ -365,45 +376,91 @@ int parse_match_token(char **buffer)
 	if (buffer == NULL || *start < 'A' || *start > 'Z')
 		return -1;
 
-	/* Find the first entry in the keyword table that will match. */
+	/* Find the first entry in the keyword table that will match. If there isn't
+	 * one, then report a fail immediately.
+	 */
 
 	keyword = parse_keyword_index[*start - 'A'];
-	//printf ("Try to match on %c, index %d\n", *start, keyword);
 	if (keyword == -1)
 		return -1;
+
+	/* Scan through the keyword table from the start point identified above
+	 * until we find that we've alphabetically passed the text to be matched.
+	 * For each keyword, run a scan to try and match it with the text either
+	 * in full or in abbreviated form.
+	 */
 
 	do {
 		char *test = start, *match = parse_keywords[keyword].name;
 
-		//printf("Entering loop: keyword=%d, test=%c, match=%c\n", keyword, *test, *match);
-		
-		while (*test == *match && *match != '\0' && *test != '.' && *test >= 'A' && *test <= 'Z') {
-			//printf("Comparing test=%c with match=%c\n", *test, *match);
+		/* Scan forward from the start of the buffer, comparing the
+		 * characters until:
+		 *
+		 * a) the characters differ, or
+		 * b) we reach the end of the keyword.
+		 *
+		 * At the end, the pointers will be pointing to the characters
+		 * after the last pair to match.
+		 *
+		 * NB: We're assuming that the characters in the keyword list
+		 * are all valid (ie. uppercase A to Z only, plus [ as the
+		 * character after Z in ASCII). If not, there's a danger that
+		 * the comparison will fail and we will run off the end of
+		 * something.
+		 */
+
+		while (*test == *match && *match != '\0') {
 			test++;
 			match++;
 		}
 
-		//printf("At end, test=%c and match=%c\n", *test, *match);
+		/* Process the result. */
 
-		if (*match == '\0') {
+		if (*test == '.' && ((test - start) >= parse_keywords[keyword].abbrev)) {
+			/* If we've hit a . in the string to be matched, then
+			 * the characters before it must match the start of the
+			 * keyword. If enough have passed to give us the minimum
+			 * abbreviation, then match it.
+			 *
+			 * In the situation that a valid abbreviation matches a
+			 * valid keyword (eg. OR. and OR), then the abbreviation
+			 * will trump the keyword.
+			 */
+
+			result = *(match - 1) - *(test - 1);
+			partial = keyword;
+			partial_end = test;
+		} else if (*match == '\0') {
+			/* Otherwise, if we're at the end of the keyword, then
+			 * this must be an exact match.
+			 */
+
 			result = 0;
 			full = keyword;
 			full_end = test;
 		} else if (*test == '.') {
-			//printf("Backstep, test=%c and match=%c\n", *(test - 1), *(match - 1));
+			/* Otherwise, if we've hit a . then this must have been
+			 * a full abbreviated match which wasn't long enough.
+			 * Therefore set result on the last pair of characters,
+			 * so that we can carry on through the table.
+			 */
+
 			result = *(match - 1) - *(test - 1);
-			if ((test - start) >= parse_keywords[keyword].abbrev) {
-				partial = keyword;
-				partial_end = test;
-			}
-		} else {
+		} else  {
+			/* Otherwise, we just failed. Set the result on the
+			 * current pair of characters.
+			 */
+
 			result = *match - *test;
 		}
-		
-		//printf("result=%d\n", result);
-		
+
 		keyword++;
 	} while (result <= 0);
+
+	/* Return a result. If there's a full match, use this. If not, use a
+	 * partial one if available. By definition (above), the full match must
+	 * be longer than the partial one, and so correct.
+	 */
 
 	if (full != -1) {
 		*buffer = full_end;
@@ -417,5 +474,4 @@ int parse_match_token(char **buffer)
 
 	return -1;
 }
-
 
