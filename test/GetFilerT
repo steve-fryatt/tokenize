@@ -322,6 +322,7 @@ L%=code_block%+code_size%
   STRGE   R0,up_flag
   LDMFD   R13!,{R0,PC}
 ]
+I. IN. INS. INST.
 :
 REM Link the code onto the EventV list.
 :
