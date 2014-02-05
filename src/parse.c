@@ -91,7 +91,7 @@ static struct keyword parse_keywords[] = {
 	{"DRAW",	2,	0xdf,	0xdf	},	/* 33	*/
 	{"EDIT",	2,	0x92c7,	0x92c7	},	/* 34	*/
 	{"ELLIPSE",	3,	0x9dc8,	0x9dc8	},	/* 35	*/
-	{"ELSE",	2,	0xcc,	0xcc	},	/* 36	*/
+	{"ELSE",	2,	0xcc,	0x8b	},	/* 36	*/
 	{"END",		3,	0xe0,	0xe0	},	/* 37	*/
 	{"ENDCASE",	4,	0xcb,	0xcb	},	/* 38	*/
 	{"ENDIF",	5,	0xcd,	0xcd	},	/* 39	*/
@@ -335,9 +335,43 @@ char *parse_process_line(char *line, bool *assembler)
 		
 			read++;
 		} else if (*read >= 'A' && *read <= 'Z' && (token = parse_match_token(&read)) != -1) {
-			printf("Found token %d: %s\n", token, parse_keywords[token].name);
+			/* Handle keywords */
+			write += sprintf(write, "¬%s(%d)¬", parse_keywords[token].name, token);
+		} else if ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z')) {
+			/* Handle variable names */
+			while ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z') || (*read >= 'A' && *read <= 'Z') || *read == '_' || *read == '`')
+				*write++ = *read++;
+			if (*read == '%' || *read == '$')
+				*write++ = *read++;
+		} else if ((*read >= '0' && *read <= '9') || *read == '&' || *read == '%' || *read == '.') {
+			switch (*read) {
+			case '&':
+				do {
+					*write++ = *read++;
+				} while ((*read >= '0' && *read <= '9') || (*read >= 'a' && *read <= 'f') || (*read >= 'A' && *read <= 'F'));
+				break;
+			case '%':
+				do {
+					*write++ = *read++;
+				} while (*read == '0' || *read == '1');
+				break;
+			default:
+				while (*read >= '0' && *read <= '9')
+					*write++ = *read++;
+				if (*read == '.')
+					*write++ = *read++;
+				while (*read >= '0' && *read <= '9')
+					*write++ = *read++;
+				if ((*read == 'e' || *read == 'E') && ((*(read + 1) >= '0' && *(read + 1) <= '9') || *(read + 1) == '+' || *(read + 1) == '-')) {
+					*write++ = *read++;
+					do {
+						*write++ = *read++;
+					} while (*read >= '0' && *read <= '9');
+				}
+				break;
+			}
 		} else {
-			read++;
+			*write++ = *read++;
 		}
 	}
 
