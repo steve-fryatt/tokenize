@@ -304,6 +304,8 @@ char *parse_process_line(char *line, bool *assembler)
 	while (*read != '\n' && isspace(*read))
 		read++;
 
+	write += sprintf(write, "(0x0d)(linehi)(linelo)(len-incstart)");
+
 	while (*read != '\n') {
 		if (*assembler == true) {
 			/* Assembler is a special case. We just copy text across
@@ -338,7 +340,19 @@ char *parse_process_line(char *line, bool *assembler)
 			constant_due = false;
 		} else if (*read >= 'A' && *read <= 'Z' && (token = parse_match_token(&read)) != -1) {
 			/* Handle keywords */
-			write += sprintf(write, "¬%s(%d)¬", parse_keywords[token].name, token);
+			unsigned bytes;
+
+			if (token == 36 && line_start)
+				bytes = parse_keywords[token].start;
+			else if (token != 36 && statement_start)
+				bytes = parse_keywords[token].start;
+			else
+				bytes = parse_keywords[token].elsewhere;
+
+			if ((bytes & 0xff00) != 0)
+				write += sprintf(write, "¬(%x)(%x)¬", bytes & 0xff, (bytes & 0xff00) >> 8);
+			else
+				write += sprintf(write, "¬(%x)¬", bytes & 0xff);
 
 			constant_due = false;
 
