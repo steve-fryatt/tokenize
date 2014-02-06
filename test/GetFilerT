@@ -323,10 +323,14 @@ L%=code_block%+code_size%
   LDMFD   R13!,{R0,PC}
 ]
 :
-REM Link the code onto the EventV list.
+REM Link the code onto the NOT EventV list.
 :
 SYS "OS_Claim",&10,code_block%+12,0
 SYS "OS_Byte",14,&10
+PRINT "hello" : *This is a star command!
+GOTO 139
+GOTO &10
+GOTO 204
 ENDPROC
 
 I. IN. INS. INST.
