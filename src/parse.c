@@ -195,7 +195,7 @@ static struct keyword parse_keywords[] = {
 	{"TEMPO",	2,	0x9fc8,	0x9fc8	},	/* 137	*/
 	{"TEXTLOAD",	5,	0x9bc7,	0x9bc7	},	/* 138	*/
 	{"TEXTSAVE",	5,	0x9cc7,	0x9cc7	},	/* 139	*/
-	{"THEN",	2,	0x8c,	0x8c	},	/* 14`	*/
+	{"THEN",	2,	0x8c,	0x8c	},	/* 140	*/
 	{"TIME",	2,	0xd1,	0x91	},	/* 141	*/
 	{"TINT",	4,	0x9cc8,	0x9cc8	},	/* 142	*/
 	{"TO",		2,	0xb8,	0xb8	},	/* 143	*/
@@ -255,6 +255,12 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 
 
 static int parse_match_token(char **buffer);
+static void parse_process_string(char **read, char **write);
+static void parse_process_numeric_constant(char **read, char **write);
+static void parse_process_binary_constant(char **read, char **write);
+static void parse_process_fnproc(char **read, char **write);
+static void parse_process_variable(char **read, char **write);
+static void parse_process_to_line_end(char **read, char **write);
 
 /**
  * Parse a line of BASIC, returning a pointer to the tokenised form which will
@@ -274,6 +280,8 @@ char *parse_process_line(char *line, bool *assembler)
 	enum parse_error	error = PARSE_NO_ERROR;
 
 	bool	statement_start = true;		/**< True while we're at the start of a statement.	*/
+	bool	line_start = true;		/**< True while we're at the start of a line.		*/
+	bool	constant_due = false;		/**< True if a line number constant could be coming up.	*/
 
 	/* Skip any leading whitespace on the line. */
 
@@ -311,66 +319,80 @@ char *parse_process_line(char *line, bool *assembler)
 		
 			*assembler = true;
 			*write++ = *read++;
+
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
 		} else if (*read == '\"') {
 			/* Copy strings as a lump. */
+			parse_process_string(&read, &write);
 
-			bool string_closed = false;
-
-			*write++ = *read++;
-
-			while (*read != '\n' && !string_closed) {
-				if (*read == '\"' && *(read + 1) != '\"')
-					string_closed = true;
-				else if (*read == '\"' && *(read + 1) == '\"')
-					*write++ = *read++;
-
-				*write++ = *read++;
-			}
-
-			if (!string_closed) {
-				printf("Missing string terminator");
-			}
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
 		} else if (*read == ':') {
 			/* Handle breaks in statements. */
-		
-			read++;
+			*write++ = *read++;
+
+			statement_start = true;
+			constant_due = false;
 		} else if (*read >= 'A' && *read <= 'Z' && (token = parse_match_token(&read)) != -1) {
 			/* Handle keywords */
 			write += sprintf(write, "¬%s(%d)¬", parse_keywords[token].name, token);
-		} else if ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z')) {
-			/* Handle variable names */
-			while ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z') || (*read >= 'A' && *read <= 'Z') || *read == '_' || *read == '`')
-				*write++ = *read++;
-			if (*read == '%' || *read == '$')
-				*write++ = *read++;
-		} else if ((*read >= '0' && *read <= '9') || *read == '&' || *read == '%' || *read == '.') {
-			switch (*read) {
-			case '&':
-				do {
-					*write++ = *read++;
-				} while ((*read >= '0' && *read <= '9') || (*read >= 'a' && *read <= 'f') || (*read >= 'A' && *read <= 'F'));
+
+			constant_due = false;
+
+			switch (token) {
+			case 36:	/* ELSE		*/
+			case 57:	/* GOSUB	*/
+			case 58:	/* GOTO		*/
+			case 116:	/* RESTORE	*/
+			case 140:	/* THEN		*/
+				constant_due = true;
 				break;
-			case '%':
-				do {
-					*write++ = *read++;
-				} while (*read == '0' || *read == '1');
+			case 52:	/* FN		*/
+			case 107:	/* PROC		*/
+				parse_process_fnproc(&read, &write);
 				break;
-			default:
-				while (*read >= '0' && *read <= '9')
-					*write++ = *read++;
-				if (*read == '.')
-					*write++ = *read++;
-				while (*read >= '0' && *read <= '9')
-					*write++ = *read++;
-				if ((*read == 'e' || *read == 'E') && ((*(read + 1) >= '0' && *(read + 1) <= '9') || *(read + 1) == '+' || *(read + 1) == '-')) {
-					*write++ = *read++;
-					do {
-						*write++ = *read++;
-					} while (*read >= '0' && *read <= '9');
-				}
+			case 112:	/* REM		*/
+				parse_process_to_line_end(&read, &write);
 				break;
 			}
+
+			statement_start = false;
+			line_start = false;
+		} else if ((*read >= '0' && *read <= '9') && constant_due) {
+			/* Handle binary line number constants. */
+			parse_process_binary_constant(&read, &write);
+
+			statement_start = false;
+			line_start = false;
+		} else if ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z')) {
+			/* Handle variable names */
+			parse_process_variable(&read, &write);
+
+			statement_start = false;
+			line_start = false;
+		} else if ((*read >= '0' && *read <= '9') || *read == '&' || *read == '%' || *read == '.') {
+			/* Handle numeric constants. */
+			parse_process_numeric_constant(&read, &write);
+			
+			statement_start = false;
+			line_start = false;
+		} else if (*read == '*' && statement_start) {
+			/* It's a star command, so run out to the end of the line. */
+
+			parse_process_to_line_end(&read, &write);
 		} else {
+			/* Handle everything else. */
+			if (!isspace(*read)) {
+				statement_start = false;
+				line_start = false;
+			}
+
+			if (!(isspace(*read) || *read == ','))
+				constant_due = false;
+
 			*write++ = *read++;
 		}
 	}
@@ -509,3 +531,157 @@ static int parse_match_token(char **buffer)
 	return -1;
 }
 
+
+/**
+ * Process a string object, copying bytes from read to write until a valid
+ * terminator is found or the end of the line is reached. The two pointers
+ * are updated on return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_string(char **read, char **write)
+{
+	bool string_closed = false;
+
+	if (read == NULL || write == NULL || *read == NULL || *write == NULL)
+		return;
+
+	*(*write)++ = *(*read)++;
+
+	while (**read != '\n' && !string_closed) {
+		if (**read == '\"' && (**read + 1) != '\"')
+			string_closed = true;
+		else if (**read == '\"' && (**read + 1) == '\"')
+			*(*write)++ = *(*read)++;
+
+		*(*write)++ = *(*read)++;
+	}
+
+	if (!string_closed) {
+		printf("Missing string terminator");
+	}
+}
+
+
+/**
+ * Process a numeric constant, copying bytes from read to write until a valid
+ * terminator is found or the end of the line is reached. The two pointers
+ * are updated on return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_numeric_constant(char **read, char **write)
+{
+	switch (**read) {
+	case '&':
+		do {
+			*(*write)++ = *(*read)++;
+		} while ((**read >= '0' && **read <= '9') || (**read >= 'a' && **read <= 'f') || (**read >= 'A' && **read <= 'F'));
+		break;
+	case '%':
+		do {
+			*(*write)++ = *(*read)++;
+		} while (**read == '0' || **read == '1');
+		break;
+	default:
+		while (**read >= '0' && **read <= '9')
+			*(*write)++ = *(*read)++;
+		if (**read == '.')
+			*(*write)++ = *(*read)++;
+		while (**read >= '0' && **read <= '9')
+			*(*write)++ = *(*read)++;
+		if ((**read == 'e' || **read == 'E') && ((*(*read + 1) >= '0' && *(*read + 1) <= '9') || *(*read + 1) == '+' || *(*read + 1) == '-')) {
+			*(*write)++ = *(*read)++;
+			do {
+				*(*write)++ = *(*read)++;
+			} while (**read >= '0' && **read <= '9');
+		}
+		break;
+	}
+}
+
+
+/**
+ * Process a line number constant, taking bytes from read to write until a valid
+ * terminator is found or the end of the line is reached. The number is then
+ * converted into inline line number format, and the two pointers are updated on
+ * return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_binary_constant(char **read, char **write)
+{
+	char		number[256], *ptr;
+	unsigned	line = 0;
+	unsigned	byte1, byte2, byte3;
+
+	ptr = number;
+
+	while (**read >= '0' && **read <= '9')
+		*ptr++ = *(*read)++;
+	*ptr = '\0';
+
+	line = atoi(number) & 0xffff;
+
+	byte1 = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
+	byte2 = (line & 0x3f) | 0x40;
+	byte3 = ((line & 0x3f00) >> 8) | 0x40;
+
+	*write += sprintf(*write, "¬(%x)(%x)(%x)(%x)¬", 0x8d, byte1, byte2, byte3);
+}
+
+
+/**
+ * Process an FN or PROC name, copying bytes from read to write until a valid
+ * terminator is found or the end of the line is reached. The two pointers
+ * are updated on return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_fnproc(char **read, char **write)
+{
+	while ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read >= '0' && **read <= '9') || **read == '_' || **read == '`')
+		*(*write)++ = *(*read)++;
+}
+
+
+/**
+ * Process a variable name, copying bytes from read to write until a valid
+ * terminator is found or the end of the line is reached. The two pointers
+ * are updated on return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_variable(char **read, char **write)
+{
+	while ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read >= '0' && **read <= '9') || **read == '_' || **read == '`')
+		*(*write)++ = *(*read)++;
+	if (**read == '%' || **read == '$')
+		*(*write)++ = *(*read)++;
+}
+
+
+/**
+ * Process a "run to end" object, such as REM or *, copying bytes from read to
+ * write until the end of the line is reached. The two pointers are updated on
+ * return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_to_line_end(char **read, char **write)
+{
+	while (**read != '\n' && **read != '\r' && **read != '\0')
+		*(*write)++ = *(*read)++;
+}
