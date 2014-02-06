@@ -44,10 +44,12 @@ enum parse_error {
  * \param *line		Pointer to the line to process,
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
+ * \param *line_number	Pointer to a variable to hold the proposed next line
+ *			number; updated on exit if a number was found.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, bool *assembler);
+char *parse_process_line(char *line, bool *assembler, unsigned *line_number);
 
 #endif
 

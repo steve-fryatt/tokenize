@@ -269,13 +269,15 @@ static void parse_process_to_line_end(char **read, char **write);
  * \param *line		Pointer to the line to process,
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
+ * \param *line_number	Pointer to a variable to hold the proposed next line
+ *			number; updated on exit if a number was found.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, bool *assembler)
+char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 {
 	char			*read = line, *write = parse_buffer;
-	unsigned		line_number = 0;
+	unsigned		read_number = 0;
 	int			token;
 	enum parse_error	error = PARSE_NO_ERROR;
 
@@ -295,8 +297,13 @@ char *parse_process_line(char *line, bool *assembler)
 
 	if (write > parse_buffer) {
 		*write = '\0';
-		line_number = atoi(parse_buffer);
+		read_number = atoi(parse_buffer);
 		write = parse_buffer;
+
+		if (read_number > *line_number)
+			*line_number = read_number;
+		else if (read_number < *line_number)
+			printf("Line number error");
 	}
 
 	/* Again, trim any whitespace that followed the line number. */
@@ -304,7 +311,7 @@ char *parse_process_line(char *line, bool *assembler)
 	while (*read != '\n' && isspace(*read))
 		read++;
 
-	write += sprintf(write, "(0x0d)(linehi)(linelo)(len-incstart)");
+	write += sprintf(write, "(0x0d)(%x)(%x)(len-incstart)", (*line_number & 0xff00) >> 8, *line_number & 0xff);
 
 	while (*read != '\n') {
 		if (*assembler == true) {
@@ -413,7 +420,7 @@ char *parse_process_line(char *line, bool *assembler)
 
 	*write = '\0';
 
-	printf("Line (%d): %s\n", line_number, parse_buffer);
+	printf("Line (%d): %s\n", *line_number, parse_buffer);
 
 
 	return NULL;

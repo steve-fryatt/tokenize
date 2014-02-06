@@ -101,9 +101,10 @@ int main(int argc, char *argv[])
 
 void tokenize_parse_file(char *in, char *out)
 {
-	FILE	*fin;
-	char	line[MAX_INPUT_LINE_LENGTH];
-	bool	assembler = false;
+	FILE		*fin;
+	char		line[MAX_INPUT_LINE_LENGTH];
+	bool		assembler = false;
+	unsigned	line_number = 0, increment = 10;
 
 	if (in == NULL || out == NULL)
 		return;
@@ -115,7 +116,9 @@ void tokenize_parse_file(char *in, char *out)
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, fin) != NULL) {
 		printf("Read: %s\n", line);
 		
-		parse_process_line(line, &assembler);
+		line_number += increment;
+		
+		parse_process_line(line, &assembler, &line_number);
 	}
 
 
