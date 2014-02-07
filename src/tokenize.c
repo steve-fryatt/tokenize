@@ -129,6 +129,8 @@ void tokenize_parse_file(char *in, char *out)
 			fwrite(tokenised, sizeof(char), *(tokenised + 3), fout);
 	}
 
+	fputc(0x0d, fout);
+	fputc(0xff, fout);
 
 	fclose(fin);
 	fclose(fout);

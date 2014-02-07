@@ -142,7 +142,7 @@ static struct keyword parse_keywords[] = {
 	{"MOVE",	4,	0xec,	0xec	},	/* 84	*/
 	{"NEW",		3,	0x97c7,	0x97c7	},	/* 85	*/
 	{"NEXT",	1,	0xed,	0xed	},	/* 86	*/
-	{"NOT",		3,	0xab,	0xab	},	/* 87	*/
+	{"NOT",		3,	0xac,	0xac	},	/* 87	*/
 	{"OF",		2,	0xca,	0xca	},	/* 88	*/
 	{"OFF",		3,	0x87,	0x87	},	/* 89	*/
 	{"OLD",		1,	0x98c7,	0x98c7	},	/* 90	*/
