@@ -352,9 +352,15 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			/* Handle keywords */
 			unsigned bytes;
 
-			if (token == 36 && line_start)
+			/* ELSE needs to be tokenised differently if it is at the
+			 * start of a line. Oterwise what matters is if we're at
+			 * the start of a statement or not, to handle the pseudo-
+			 * variables.
+			 */
+
+			if (token == KWD_ELSE && line_start)
 				bytes = parse_keywords[token].start;
-			else if (token != 36 && statement_start)
+			else if (token != KWD_ELSE && statement_start)
 				bytes = parse_keywords[token].start;
 			else
 				bytes = parse_keywords[token].elsewhere;
@@ -366,18 +372,18 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			constant_due = false;
 
 			switch (token) {
-			case 36:	/* ELSE		*/
-			case 57:	/* GOSUB	*/
-			case 58:	/* GOTO		*/
-			case 116:	/* RESTORE	*/
-			case 140:	/* THEN		*/
+			case KWD_ELSE:
+			case KWD_GOSUB:
+			case KWD_GOTO:
+			case KWD_RESTORE:
+			case KWD_THEN:
 				constant_due = true;
 				break;
-			case 52:	/* FN		*/
-			case 107:	/* PROC		*/
+			case KWD_FN:
+			case KWD_PROC:
 				parse_process_fnproc(&read, &write);
 				break;
-			case 112:	/* REM		*/
+			case KWD_REM:
 				parse_process_to_line_end(&read, &write);
 				break;
 			}
