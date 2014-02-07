@@ -311,7 +311,10 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 	while (*read != '\n' && isspace(*read))
 		read++;
 
-	write += sprintf(write, "(0x0d)(%x)(%x)(len-incstart)", (*line_number & 0xff00) >> 8, *line_number & 0xff);
+	*write++ = 0x0d;
+	*write++ = (*line_number & 0xff00) >> 8;
+	*write++ = (*line_number & 0x00ff);
+	*write++ = 0;
 
 	while (*read != '\n') {
 		if (*assembler == true) {
@@ -356,10 +359,9 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			else
 				bytes = parse_keywords[token].elsewhere;
 
+			*write++ = bytes & 0xff;
 			if ((bytes & 0xff00) != 0)
-				write += sprintf(write, "¬(%x)(%x)¬", bytes & 0xff, (bytes & 0xff00) >> 8);
-			else
-				write += sprintf(write, "¬(%x)¬", bytes & 0xff);
+				*write++ = (bytes & 0xff00) >> 8;
 
 			constant_due = false;
 
@@ -418,12 +420,12 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 		}
 	}
 
+	/* Write the line length, and terminate the buffer. */
+
+	*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
 	*write = '\0';
 
-	printf("Line (%d): %s\n", *line_number, parse_buffer);
-
-
-	return NULL;
+	return parse_buffer;
 }
 
 
@@ -640,7 +642,6 @@ static void parse_process_binary_constant(char **read, char **write)
 {
 	char		number[256], *ptr;
 	unsigned	line = 0;
-	unsigned	byte1, byte2, byte3;
 
 	ptr = number;
 
@@ -650,11 +651,10 @@ static void parse_process_binary_constant(char **read, char **write)
 
 	line = atoi(number) & 0xffff;
 
-	byte1 = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
-	byte2 = (line & 0x3f) | 0x40;
-	byte3 = ((line & 0x3f00) >> 8) | 0x40;
-
-	*write += sprintf(*write, "¬(%x)(%x)(%x)(%x)¬", 0x8d, byte1, byte2, byte3);
+	*(*write)++ = 0x8d;
+	*(*write)++ = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
+	*(*write)++ = (line & 0x3f) | 0x40;
+	*(*write)++ = ((line & 0x3f00) >> 8) | 0x40;
 }
 
 
