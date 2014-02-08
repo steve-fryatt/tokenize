@@ -37,6 +37,7 @@
 
 /* Local source headers. */
 
+#include "args.h"
 #include "parse.h"
 
 
@@ -59,7 +60,9 @@ int main(int argc, char *argv[])
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	args_process_line(argc, argv, "source/AM,out/AK,link/KS,path/K,test");
+	args_process_line(argc, argv, "source/AM,out/AK,/A,link/KS,path/K,test");
+	
+	return 0;
 
 	if (argc < 3)
 		param_error = true;

@@ -52,6 +52,7 @@
 struct args_option *args_process_line(int argc, char *argv[], char *definition)
 {
 	char			*defs, *token;
+	int			i;
 	struct args_option	*options = NULL, *new = NULL;
 
 	if (argv == NULL || definition == NULL)
@@ -68,7 +69,7 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 	/* Process the parameter options one by one. */
 
 	token = strtok(defs, ",");
-	
+
 	while (token != NULL) {
 		char *qualifiers = strchr(token, '/');
 		
@@ -89,9 +90,10 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		new->multiple = false;
 		new->isswitch = false;
 		new->found = false;
+		new->next = NULL;
 
 		while (qualifiers != NULL && *qualifiers != '\0') {
-			switch (toupper(*qualifiers)) {
+			switch (toupper(*qualifiers++)) {
 			case 'A':
 				break;
 			case 'K':
@@ -107,6 +109,11 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		}
 
 		token = strtok(NULL, ",");
+	}
+
+	for (i = 1; i < argc; i++) {
+		printf("Found option: '%s'\n", argv[i]);
+	
 	}
 
 	return options;
