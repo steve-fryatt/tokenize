@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
 
 	//stack_initialise(MAX_STACK_SIZE);
 
-	printf("MenuGen %s - %s\n", BUILD_VERSION, BUILD_DATE);
-	printf("Copyright Stephen Fryatt, 2001-%s\n", BUILD_DATE + 7);
+	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
+	printf("Copyright Stephen Fryatt, 2014-%s\n", BUILD_DATE + 7);
 
 	if (argc < 3)
 		param_error = true;
