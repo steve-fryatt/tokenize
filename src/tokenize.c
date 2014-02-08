@@ -51,7 +51,8 @@ void tokenize_parse_file(char *in, char *out);
 
 int main(int argc, char *argv[])
 {
-	int	param, param_error = 0;
+	int	param;
+	bool	param_error = false;
 
 	//stack_initialise(MAX_STACK_SIZE);
 
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 	printf("Copyright Stephen Fryatt, 2001-%s\n", BUILD_DATE + 7);
 
 	if (argc < 3)
-		param_error = 1;
+		param_error = true;
 
 	if (!param_error) {
 		for (param = 3; param < argc; param++) {
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
 			else if (strcmp(argv[param], "-v") == 0)
 				verbose_output = 1;
 			else
-				param_error = 1;
+				param_error = true;
 		}
 	}
 
@@ -104,7 +105,7 @@ void tokenize_parse_file(char *in, char *out)
 	FILE		*fin, *fout;
 	char		line[MAX_INPUT_LINE_LENGTH], *tokenised;
 	bool		assembler = false;
-	unsigned	line_number = 0, increment = 10;
+	unsigned	line_number = 0, increment = 10, indent = 8;
 
 	if (in == NULL || out == NULL)
 		return;
@@ -120,13 +121,13 @@ void tokenize_parse_file(char *in, char *out)
 	}
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, fin) != NULL) {
-		printf("Read: %s\n", line);
-		
 		line_number += increment;
 		
-		tokenised = parse_process_line(line, &assembler, &line_number);
+		tokenised = parse_process_line(line, indent, &assembler, &line_number);
 		if (tokenised != NULL)
 			fwrite(tokenised, sizeof(char), *(tokenised + 3), fout);
+		else
+			break;
 	}
 
 	fputc(0x0d, fout);

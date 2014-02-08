@@ -255,9 +255,9 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 
 
 static int parse_match_token(char **buffer);
-static void parse_process_string(char **read, char **write);
+static bool parse_process_string(char **read, char **write);
 static void parse_process_numeric_constant(char **read, char **write);
-static void parse_process_binary_constant(char **read, char **write);
+static void parse_process_binary_constant(char **read, char **write, int *extra_spaces);
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_to_line_end(char **read, char **write);
@@ -267,6 +267,7 @@ static void parse_process_to_line_end(char **read, char **write);
  * remain valid until the function is called again.
  *
  * \param *line		Pointer to the line to process,
+ * \param indent	0 for no line indents; >0 to indent using tab size n.
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
@@ -274,11 +275,11 @@ static void parse_process_to_line_end(char **read, char **write);
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
+char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line_number)
 {
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
-	int			token;
+	int			token, extra_spaces = 0, leading_spaces = 0;
 	enum parse_error	error = PARSE_NO_ERROR;
 
 	bool	statement_start = true;		/**< True while we're at the start of a statement.	*/
@@ -287,8 +288,15 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 
 	/* Skip any leading whitespace on the line. */
 
-	while (*read != '\n' && isspace(*read))
+	while (*read != '\n' && isspace(*read)) {
+		if (*read == '\t' && indent > 0) {
+			leading_spaces = ((leading_spaces + 1) / indent) + indent;
+		} else {
+			leading_spaces++;
+		}
+	
 		read++;
+	}
 
 	/* If there's a line number, read and process it. */
 
@@ -299,22 +307,35 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 		*write = '\0';
 		read_number = atoi(parse_buffer);
 		write = parse_buffer;
+		leading_spaces = 0;
 
 		if (read_number > *line_number)
 			*line_number = read_number;
-		else if (read_number < *line_number)
-			printf("Line number error");
+		else if (read_number < *line_number) {
+			printf("Line number error\n");
+			return NULL;
+		}
 	}
 
 	/* Again, trim any whitespace that followed the line number. */
 
-	while (*read != '\n' && isspace(*read))
+	while (*read != '\n' && isspace(*read)) {
+		if (*read == '\t' && indent > 0) {
+			leading_spaces = ((leading_spaces + 1) / indent) + indent;
+		} else {
+			leading_spaces++;
+		}
+	
 		read++;
+	}
 
 	*write++ = 0x0d;
 	*write++ = (*line_number & 0xff00) >> 8;
 	*write++ = (*line_number & 0x00ff);
 	*write++ = 0;
+
+	for (; leading_spaces > 0; leading_spaces--)
+		*write++ = ' ';
 
 	while (*read != '\n') {
 		if (*assembler == true) {
@@ -337,7 +358,8 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			constant_due = false;
 		} else if (*read == '\"') {
 			/* Copy strings as a lump. */
-			parse_process_string(&read, &write);
+			if (!parse_process_string(&read, &write))
+				return NULL;
 
 			statement_start = false;
 			line_start = false;
@@ -365,9 +387,17 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			else
 				bytes = parse_keywords[token].elsewhere;
 
+			/* Insert the token value, and track the difference
+			 * between that and the actual displayed text so that
+			 * we can properly handle tabs.
+			 */
+
+			extra_spaces += strlen(parse_keywords[token].name) - 1;
 			*write++ = bytes & 0xff;
-			if ((bytes & 0xff00) != 0)
+			if ((bytes & 0xff00) != 0) {
 				*write++ = (bytes & 0xff00) >> 8;
+				extra_spaces--;
+			}
 
 			constant_due = false;
 
@@ -392,7 +422,7 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			line_start = false;
 		} else if ((*read >= '0' && *read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
-			parse_process_binary_constant(&read, &write);
+			parse_process_binary_constant(&read, &write, &extra_spaces);
 
 			statement_start = false;
 			line_start = false;
@@ -422,7 +452,18 @@ char *parse_process_line(char *line, bool *assembler, unsigned *line_number)
 			if (!(isspace(*read) || *read == ','))
 				constant_due = false;
 
-			*write++ = *read++;
+			if (*read == '\t' && indent > 0) {
+				int insert = indent - ((write - parse_buffer + extra_spaces - 4) % indent);
+				if (insert == 0)
+					insert = indent;
+				
+				for (; insert > 0; insert--)
+					*write++ = ' ';
+				
+				read++;
+			} else {
+				*write++ = *read++;
+			}
 		}
 	}
 
@@ -568,14 +609,15 @@ static int parse_match_token(char **buffer)
  *
  * \param **read	Pointer to the current read pointer.
  * \param **write	Pointer to the current write pointer.
+ * \return		True on success; False on error.
  */
 
-static void parse_process_string(char **read, char **write)
+static bool parse_process_string(char **read, char **write)
 {
 	bool string_closed = false;
 
 	if (read == NULL || write == NULL || *read == NULL || *write == NULL)
-		return;
+		return false;
 
 	*(*write)++ = *(*read)++;
 
@@ -590,7 +632,10 @@ static void parse_process_string(char **read, char **write)
 
 	if (!string_closed) {
 		printf("Missing string terminator");
+		return false;
 	}
+	
+	return true;
 }
 
 
@@ -642,9 +687,11 @@ static void parse_process_numeric_constant(char **read, char **write)
  *
  * \param **read	Pointer to the current read pointer.
  * \param **write	Pointer to the current write pointer.
+ * \param *extra_spaces	Pointer to integer tracking the difference in line length
+ *			between binary and displayed constant.
  */
 
-static void parse_process_binary_constant(char **read, char **write)
+static void parse_process_binary_constant(char **read, char **write, int *extra_spaces)
 {
 	char		number[256], *ptr;
 	unsigned	line = 0;
@@ -655,12 +702,16 @@ static void parse_process_binary_constant(char **read, char **write)
 		*ptr++ = *(*read)++;
 	*ptr = '\0';
 
+	// \TODO -- This should error if not able to fit into two bytes.
+
 	line = atoi(number) & 0xffff;
 
 	*(*write)++ = 0x8d;
 	*(*write)++ = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
 	*(*write)++ = (line & 0x3f) | 0x40;
 	*(*write)++ = ((line & 0x3f00) >> 8) | 0x40;
+
+	*extra_spaces += strlen(number) - 4;
 }
 
 

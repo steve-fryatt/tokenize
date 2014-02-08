@@ -202,7 +202,8 @@ enum parse_error {
  * Parse a line of BASIC, returning a pointer to the tokenised form which will
  * remain valid until the function is called again.
  *
- * \param *line		Pointer to the line to process,
+ * \param *line		Pointer to the line to process.
+ * \param indent	0 for no line indents; >0 to indent using tab size n.
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
@@ -210,7 +211,7 @@ enum parse_error {
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, bool *assembler, unsigned *line_number);
+char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line_number);
 
 #endif
 
