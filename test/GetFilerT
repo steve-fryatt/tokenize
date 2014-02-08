@@ -28,14 +28,14 @@ DEF PROCpoll
 SYS "Wimp_Poll",poll_mask%,b% TO reason_code%
 :
 CASE reason_code% OF
- WHEN 0     : IF desktop_saved_sent% THEN PROCprocess_desktop_save_result
- WHEN 2     : SYS "Wimp_OpenWindow",,b%
- WHEN 3     : SYS "Wimp_CloseWindow",,b%
- WHEN 6     : PROChandle_mouse_click_event
- WHEN 7     : PROCuser_drag_box_end
- WHEN 8     : PROChandle_key_press_event
- WHEN 9     : PROChandle_menu_selection_event
- WHEN 17,18 : PROCreceive_wimp_message
+	WHEN 0		: IF desktop_saved_sent% THEN PROCprocess_desktop_save_result
+	WHEN 2		: SYS "Wimp_OpenWindow",,b%
+	WHEN 3		: SYS "Wimp_CloseWindow",,b%
+	WHEN 6		: PROChandle_mouse_click_event
+	WHEN 7		: PROCuser_drag_box_end
+	WHEN 8		: PROChandle_key_press_event
+	WHEN 9		: PROChandle_menu_selection_event
+	WHEN 17,18	: PROCreceive_wimp_message
 ENDCASE
 ENDPROC
 :
@@ -257,13 +257,13 @@ ENDPROC
 :
 :
 :
-100 DEF FNctrl_string(string%)
+10000 DEF FNctrl_string(string%)
 :
-101 10 REM Return as a BASIC string a control character terminated string.
+10020 REM Return as a BASIC string a control character terminated string.
 :
-102 LOCAL string$
-103 :
-104 WHILE ?string%>=32
+10040 LOCAL string$
+10060 :
+10080 WHILE ?string%>=32
  string$+=CHR$(?string%)
  string%+=1
 ENDWHILE
