@@ -57,7 +57,9 @@ int main(int argc, char *argv[])
 	//stack_initialise(MAX_STACK_SIZE);
 
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
-	printf("Copyright Stephen Fryatt, 2014-%s\n", BUILD_DATE + 7);
+	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
+
+	args_process_line(argc, argv, "source/AM,out/AK,link/KS,path/K,test");
 
 	if (argc < 3)
 		param_error = true;
