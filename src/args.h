@@ -39,14 +39,26 @@ enum args_type {
 	ARGS_TYPE_BOOL
 };
 
+union args_value {
+	char	*string;			/**< The data in the form of a pointer to a string.	*/
+	int	integer;			/**< The data in the form of an integer.		*/
+	bool	boolean;			/**< The data in the form of a boolean value.		*/
+};
+
+struct args_data {
+	union args_value	value;		/**< The data itself.					*/
+
+	struct args_data	*next;		/**< Pointer to the next linked list entry.		*/
+};
+
 struct args_option {
 	char			*name;		/**< The name of the option.				*/
 
 	bool			required;	/**< True if the keyword must always included.		*/
-	bool			isswitch;	/**< True if the keyword is a switch.			*/
 	bool			multiple;	/**< True if the keyword can be used more than once.	*/
-	
-	bool			found;		/**< True if the keyword has been found at least once.	*/
+
+	enum args_type		type;		/**< The type of data used by the option.		*/
+	struct args_data	*data;		/**< Pointer to the data for the option, if any.	*/
 
 	struct args_option	*next;		/**< Pointer to next linked list entry.			*/
 };

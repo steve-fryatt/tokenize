@@ -52,15 +52,41 @@ void tokenize_parse_file(char *in, char *out);
 
 int main(int argc, char *argv[])
 {
-	int	param;
-	bool	param_error = false;
+	int			param;
+	bool			param_error = false;
+	struct args_option	*options;
+	struct args_data	*option_data;
 
 	//stack_initialise(MAX_STACK_SIZE);
 
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	args_process_line(argc, argv, "source/AM,out/AK,/A,link/KS,path/K,test");
+	options = args_process_line(argc, argv, "source/AM,out/AK,/A,link/KS,path/K,test");
+	if (options == NULL)
+		return 1;
+
+	while (options != NULL) {
+		printf("Option '%s', type %d\n", options->name, options->type);
+
+		option_data = options->data;
+		while (option_data != NULL) {
+			switch (options->type) {
+			case ARGS_TYPE_BOOL:
+				printf("Boolean: %d\n", option_data->value.boolean);
+				break;
+			case ARGS_TYPE_STRING:
+				printf("String: '%s'\n", option_data->value.string);
+				break;
+			default:
+				break;
+			}
+		
+			option_data = option_data->next;
+		}
+		
+		options = options->next;
+	}
 	
 	return 0;
 

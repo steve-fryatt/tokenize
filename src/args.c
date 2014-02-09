@@ -66,7 +66,9 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 	if (defs == NULL)
 		return NULL;
 
-	/* Process the parameter options one by one. */
+	/* Process the parameter options from the configuration string one by
+	 * one, and build the necessary data structures ready to parse the
+	 * command line. */
 
 	token = strtok(defs, ",");
 
@@ -75,6 +77,10 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		
 		if (qualifiers != NULL)
 			*qualifiers++ = '\0';
+
+		/* Create a new options block, link it to the end of the
+		 * chain and initialise the contents.
+		 */
 
 		new = malloc(sizeof(struct args_option));
 		if (new == NULL)
@@ -88,24 +94,33 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		new->name = token;
 		new->required = false;
 		new->multiple = false;
-		new->isswitch = false;
-		new->found = false;
+		new->type = ARGS_TYPE_STRING;
+		new->data = NULL;
 		new->next = NULL;
 
 		tail = new;
 
+		/* Process the qualifier flags from the end of the option. */
+
 		while (qualifiers != NULL && *qualifiers != '\0') {
 			switch (toupper(*qualifiers++)) {
-			case 'A':
+			case 'A':	/* */
 				break;
-			case 'K':
+			case 'I':	/* Integer Type */
+				if (new->type != ARGS_TYPE_STRING)
+					return NULL;
+				new->type = ARGS_TYPE_INT;
+				break;
+			case 'K':	/* Option Name is Required. */
 				new->required = true;
 				break;
-			case 'M':
+			case 'M':	/* Can take multiple values. */
 				new->multiple = true;
 				break;
-			case 'S':
-				new->isswitch = true;
+			case 'S':	/* Switch (Boolean) Type. */
+				if (new->type != ARGS_TYPE_STRING)
+					return NULL;
+				new->type = ARGS_TYPE_BOOL;
 				break;
 			}
 		}
@@ -113,42 +128,88 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		token = strtok(NULL, ",");
 	}
 
+	/* Now process the contents of argv[]. We assume that argv[0] is the
+	 * command used to call the client, so start at argv[1].
+	 */
+
 	for (i = 1; i < argc; i++) {
-		printf("Found option: '%s'\n", argv[i]);
+		struct args_option	*search = options;
+		char			*name = NULL;
 
 		if (*argv[i] == '-') {
-			char *name = argv[i] + 1;
-			struct args_option *search = options;
+			/* The entry's an option name. */
+		
+			name = argv[i] + 1;
 
 			while (search != NULL && strcmp(name, search->name) != 0)
 				search = search->next;
 
-			if (search != NULL) {
-				if (search->found && !search->multiple) {
-					fprintf(stderr, "Switch -%s can not appear multiple times.\n", name);
+			if (search == NULL) {
+				fprintf(stderr, "Switch -%s not recognised.\n", name);
+				return NULL;
+			}
+
+			if ((search->data != NULL) && !search->multiple) {
+				fprintf(stderr, "Switch -%s can not appear multiple times.\n", name);
+				return NULL;
+			}
+
+			if (search->type != ARGS_TYPE_BOOL) {
+				if (i + 1 >= argc || *argv[i + 1] == '-') {
+					fprintf(stderr, "Switch -%s requires a value.\n", name);
 					return NULL;
 				}
-
-				search->found = true;
-
-				if (!search->isswitch) {
-					if (i + 1 >= argc || *argv[i + 1] == '-') {
-						fprintf(stderr, "Switch -%s requires an option.\n", name);
-						return NULL;
-					}
-				
-					i++;
-				}
-
-				printf("Found match: %s\n", search->name);
 			
+				i++;
 			}
-			
-		
-		}
-	
+		} else {
+			/* The entry's a free one, so match it to the first open
+			 * option in the list.
+			 */
 
-	
+			while (search != NULL && (search->type == ARGS_TYPE_BOOL || search->required ||
+					(!search->multiple && (search->data != NULL))))
+				search = search->next;
+
+			if (search == NULL) {
+				fprintf(stderr, "Option '%s' not recognised.\n", argv[i]);
+				return NULL;
+			}
+		}
+
+		/* A valid match was found, so add the data to the option. */
+
+		if (search != NULL) {
+			struct args_data *new = NULL, *end = NULL;
+
+			/* Create a new data block and add it to the list. */
+
+			new = malloc(sizeof(struct args_data));
+			if (new == NULL)
+				return NULL;
+
+			switch (search->type) {
+			case ARGS_TYPE_BOOL:
+				new->value.boolean = true;
+				break;
+			case ARGS_TYPE_INT:
+				new->value.integer = atoi(argv[i]);
+				break;
+			case ARGS_TYPE_STRING:
+				new->value.string = argv[i];
+				break;
+			default:
+				break;
+			}
+			new->next = NULL;
+
+			if (search->data == NULL) {
+				search->data = new;
+			} else {
+				for (end = search->data; end->next != NULL; end = end->next);
+				end->next = new;
+			}
+		}
 	}
 
 	return options;
