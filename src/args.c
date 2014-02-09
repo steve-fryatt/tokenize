@@ -53,7 +53,7 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 {
 	char			*defs, *token;
 	int			i;
-	struct args_option	*options = NULL, *new = NULL;
+	struct args_option	*options = NULL, *tail = NULL, *new = NULL;
 
 	if (argv == NULL || definition == NULL)
 		return NULL;
@@ -82,8 +82,8 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 
 		if (options == NULL)
 			options = new;
-		else
-			options->next = new;
+		else if (tail != NULL)
+			tail->next = new;
 
 		new->name = token;
 		new->required = false;
@@ -91,6 +91,8 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		new->isswitch = false;
 		new->found = false;
 		new->next = NULL;
+
+		tail = new;
 
 		while (qualifiers != NULL && *qualifiers != '\0') {
 			switch (toupper(*qualifiers++)) {
@@ -113,6 +115,39 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 
 	for (i = 1; i < argc; i++) {
 		printf("Found option: '%s'\n", argv[i]);
+
+		if (*argv[i] == '-') {
+			char *name = argv[i] + 1;
+			struct args_option *search = options;
+
+			while (search != NULL && strcmp(name, search->name) != 0)
+				search = search->next;
+
+			if (search != NULL) {
+				if (search->found && !search->multiple) {
+					fprintf(stderr, "Switch -%s can not appear multiple times.\n", name);
+					return NULL;
+				}
+
+				search->found = true;
+
+				if (!search->isswitch) {
+					if (i + 1 >= argc || *argv[i + 1] == '-') {
+						fprintf(stderr, "Switch -%s requires an option.\n", name);
+						return NULL;
+					}
+				
+					i++;
+				}
+
+				printf("Found match: %s\n", search->name);
+			
+			}
+			
+		
+		}
+	
+
 	
 	}
 
