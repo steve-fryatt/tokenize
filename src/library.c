@@ -89,26 +89,25 @@ void library_add_file(char *file)
  * \return		True if a filename was returned; else false.
  */
 
-bool library_get_file(char *buffer, size_t len)
+FILE *library_get_file(void)
 {
 	struct library_file	*old = NULL;
+	FILE			*file = NULL;
 
-	if (library_file_head == NULL)
-		return false;
+	while (library_file_head != NULL && file == NULL) {
+		printf("Trying to open library file '%s'\n", library_file_head->file);
 
-	if (strlen(library_file_head->file) >= len)
-		return false;
+		file = fopen(library_file_head->file, "r");
 
-	strcpy(buffer, library_file_head->file);
+		old = library_file_head;
+		library_file_head = library_file_head->next;
+		if (library_file_tail == old)
+			library_file_tail = NULL;
+		if (old->file != NULL)
+			free(old->file);
+		free(old);
+	}
 
-	old = library_file_head;
-	library_file_head = library_file_head->next;
-	if (library_file_tail == old)
-		library_file_tail = NULL;
-	if (old->file != NULL)
-		free(old->file);
-	free(old);
-
-	return true;
+	return file;
 }
 

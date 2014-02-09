@@ -43,12 +43,11 @@
 
 
 #define MAX_INPUT_LINE_LENGTH 1024
-#define MAX_FILENAME_LENGTH 4096
 
 
 
 bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_increment);
-void tokenize_parse_file(char *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_increment);
+void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_increment);
 
 int main(int argc, char *argv[])
 {
@@ -114,8 +113,7 @@ int main(int argc, char *argv[])
 
 bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_indent)
 {
-	char		input_file[MAX_FILENAME_LENGTH];
-	FILE		*out;
+	FILE		*in, *out;
 	unsigned	line_number = 0;
 
 	printf("Open for file '%s'\n", output_file);
@@ -124,9 +122,9 @@ bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_i
 	if (out == NULL)
 		return false;
 
-	while (library_get_file(input_file, MAX_FILENAME_LENGTH)) {
-		printf("Processing file %s\n", input_file);
-		tokenize_parse_file(input_file, out, &line_number, line_increment, tab_indent);
+	while ((in = library_get_file()) != NULL) {
+		tokenize_parse_file(in, out, &line_number, line_increment, tab_indent);
+		fclose(in);
 	}
 
 	fputc(0x0d, out);
@@ -137,20 +135,16 @@ bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_i
 	return true;
 }
 
-void tokenize_parse_file(char *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_indent)
+
+void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_indent)
 {
-	FILE		*file;
 	char		line[MAX_INPUT_LINE_LENGTH], *tokenised;
 	bool		assembler = false;
 
 	if (in == NULL || out == NULL)
 		return;
 
-	file = fopen(in, "r");
-	if (file == NULL)
-		return;
-
-	while (fgets(line, MAX_INPUT_LINE_LENGTH, file) != NULL) {
+	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
 		*line_number += line_increment;
 		
 		tokenised = parse_process_line(line, tab_indent, &assembler, line_number);
@@ -159,7 +153,5 @@ void tokenize_parse_file(char *in, FILE *out, unsigned *line_number, unsigned li
 		else
 			break;
 	}
-
-	fclose(file);
 }
 

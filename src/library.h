@@ -30,7 +30,7 @@
 #ifndef TOKENIZE_LIBRARY_H
 #define TOKENIZE_LIBRARY_H
 
-#include <stdbool.h>
+#include <stdio.h>
 
 
 /**
@@ -52,7 +52,7 @@ void library_add_file(char *file);
  * \return		True if a filename was returned; else false.
  */
 
-bool library_get_file(char *buffer, size_t len);
+FILE *library_get_file(void);
 
 #endif
 
