@@ -38,133 +38,128 @@
 /* Local source headers. */
 
 #include "args.h"
+#include "library.h"
 #include "parse.h"
 
 
 #define MAX_INPUT_LINE_LENGTH 1024
-
-static int verbose_output = 0;
-static int embed_dialogue_names = 0;
+#define MAX_FILENAME_LENGTH 4096
 
 
-void tokenize_parse_file(char *in, char *out);
 
+bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_increment);
+void tokenize_parse_file(char *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_increment);
 
 int main(int argc, char *argv[])
 {
-	int			param;
 	bool			param_error = false;
 	struct args_option	*options;
 	struct args_data	*option_data;
+	char *output_file	= NULL;
+
+	unsigned		line_increment = 10;		/**< The default line number increment.		*/
+	unsigned		tab_indent = 8;			/**< The default tab indent.			*/
+
 
 	//stack_initialise(MAX_STACK_SIZE);
 
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	options = args_process_line(argc, argv, "source/AM,out/AK,/A,link/KS,path/K,test");
-	if (options == NULL)
+	options = args_process_line(argc, argv, "source/AM,out/AK,increment/IK,link/KS,path/K,tab/IK");
+	if (options == NULL) {
+		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
+	}
 
 	while (options != NULL) {
-		printf("Option '%s', type %d\n", options->name, options->type);
-
-		option_data = options->data;
-		while (option_data != NULL) {
-			switch (options->type) {
-			case ARGS_TYPE_BOOL:
-				printf("Boolean: %d\n", option_data->value.boolean);
-				break;
-			case ARGS_TYPE_STRING:
-				printf("String: '%s'\n", option_data->value.string);
-				break;
-			default:
-				break;
+		if (strcmp(options->name, "increment") == 0) {
+			if (options->data != NULL)
+				line_increment = options->data->value.integer;
+		} else if (strcmp(options->name, "source") == 0) {
+			if (options->data != NULL) {
+				option_data = options->data;
+				
+				while (option_data != NULL) {
+					if (option_data->value.string != NULL)
+						library_add_file(options->data->value.string);
+					option_data = option_data->next;
+				}
+			} else {
+				param_error = true;
 			}
-		
-			option_data = option_data->next;
-		}
-		
-		options = options->next;
-	}
-	
-	return 0;
-
-	if (argc < 3)
-		param_error = true;
-
-	if (!param_error) {
-		for (param = 3; param < argc; param++) {
-			if (strcmp(argv[param], "-d") == 0)
-				embed_dialogue_names = 1;
-			else if (strcmp(argv[param], "-v") == 0)
-				verbose_output = 1;
+		} else if (strcmp(options->name, "out") == 0) {
+			if (options->data != NULL && options->data->value.string != NULL)
+				output_file = options->data->value.string;
 			else
 				param_error = true;
+		} else if (strcmp(options->name, "tab") == 0) {
+			if (options->data != NULL)
+				tab_indent = options->data->value.integer;
 		}
+	
+		options = options->next;
 	}
 
 	if (param_error) {
-		printf("Usage: tokenize <sourcefile> <output> [-v]\n");
-		return 1;
-	}
-	
-	tokenize_parse_file(argv[1], argv[2]);
-/*
-	printf("Starting to parse menu definition file...\n");
-	if (parse_process_file(argv[1], verbose_output)) {
-		printf("Errors in source file: terminating.\n");
+		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
 	}
 
-	printf("Collating menu data...\n");
-	data_collate_structures(embed_dialogue_names, verbose_output);
+	if (!tokenize_run_job(output_file, line_increment, tab_indent))
+		return 1;
 
-	if (verbose_output) {
-		printf("Printing structure report...\n");
-		data_print_structure_report();
-	}
-
-	printf("Writing menu file...\n");
-	data_write_standard_menu_file(argv[2]);
-*/
 	return 0;
 }
 
-void tokenize_parse_file(char *in, char *out)
+bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_indent)
 {
-	FILE		*fin, *fout;
+	char		input_file[MAX_FILENAME_LENGTH];
+	FILE		*out;
+	unsigned	line_number = 0;
+
+	printf("Open for file '%s'\n", output_file);
+
+	out = fopen(output_file, "w");
+	if (out == NULL)
+		return false;
+
+	while (library_get_file(input_file, MAX_FILENAME_LENGTH)) {
+		printf("Processing file %s\n", input_file);
+		tokenize_parse_file(input_file, out, &line_number, line_increment, tab_indent);
+	}
+
+	fputc(0x0d, out);
+	fputc(0xff, out);
+
+	fclose(out);
+	
+	return true;
+}
+
+void tokenize_parse_file(char *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_indent)
+{
+	FILE		*file;
 	char		line[MAX_INPUT_LINE_LENGTH], *tokenised;
 	bool		assembler = false;
-	unsigned	line_number = 0, increment = 10, indent = 8;
 
 	if (in == NULL || out == NULL)
 		return;
 
-	fin = fopen(in, "r");
-	if (fin == NULL)
+	file = fopen(in, "r");
+	if (file == NULL)
 		return;
-	
-	fout = fopen(out, "w");
-	if (fout == NULL) {
-		fclose(fin);
-		return;
-	}
 
-	while (fgets(line, MAX_INPUT_LINE_LENGTH, fin) != NULL) {
-		line_number += increment;
+	while (fgets(line, MAX_INPUT_LINE_LENGTH, file) != NULL) {
+		*line_number += line_increment;
 		
-		tokenised = parse_process_line(line, indent, &assembler, &line_number);
+		tokenised = parse_process_line(line, tab_indent, &assembler, line_number);
 		if (tokenised != NULL)
-			fwrite(tokenised, sizeof(char), *(tokenised + 3), fout);
+			fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
 		else
 			break;
 	}
 
-	fputc(0x0d, fout);
-	fputc(0xff, fout);
-
-	fclose(fin);
-	fclose(fout);
+	fclose(file);
 }
 
