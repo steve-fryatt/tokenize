@@ -34,6 +34,26 @@
 
 
 /**
+ * Add a combined path definition to the list of library file paths. The
+ * definition is in the format "name:path".
+ *
+ * \param *combined	The definition of the new path.
+ */
+
+void library_add_path_combined(char *combined);
+
+
+/**
+ * Add a path definition to the list of library file paths.
+ *
+ * \param *name		The name of the path.
+ * \param *path		The file path.
+ */
+
+void library_add_path(char *name, char *path);
+
+
+/**
  * Add a file to the list of files to be processed. The name is supplied raw, and
  * will be interpreted according to any library and system paths already defined
  *

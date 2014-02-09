@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	options = args_process_line(argc, argv, "source/AM,out/AK,increment/IK,link/KS,path/K,tab/IK");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK");
 	if (options == NULL) {
 		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 				
 				while (option_data != NULL) {
 					if (option_data->value.string != NULL)
-						library_add_file(options->data->value.string);
+						library_add_file(option_data->value.string);
 					option_data = option_data->next;
 				}
 			} else {
@@ -92,6 +92,18 @@ int main(int argc, char *argv[])
 				output_file = options->data->value.string;
 			else
 				param_error = true;
+		} else if (strcmp(options->name, "path") == 0) {
+			if (options->data != NULL) {
+				option_data = options->data;
+				
+				while (option_data != NULL) {
+					if (option_data->value.string != NULL)
+						library_add_path_combined(option_data->value.string);
+					option_data = option_data->next;
+				}
+			} else {
+				param_error = true;
+			}
 		} else if (strcmp(options->name, "tab") == 0) {
 			if (options->data != NULL)
 				tab_indent = options->data->value.integer;

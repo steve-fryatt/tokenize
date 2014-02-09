@@ -43,8 +43,72 @@ struct library_file {
 	struct library_file	*next;		/**< Pointer to the next file record.	*/
 };
 
+struct library_path {
+	char			*name;		/**< Pointer to the name of the path.	*/
+	char			*path;		/**< Pointer to the path location.	*/
+
+	struct library_path	*next;		/**< Pointer to the next file record.	*/
+};
+
 static struct library_file	*library_file_tail = NULL;
 static struct library_file	*library_file_head = NULL;
+
+static struct library_path	*library_path_head = NULL;
+
+
+
+/**
+ * Add a combined path definition to the list of library file paths. The
+ * definition is in the format "name:path".
+ *
+ * \param *combined	The definition of the new path.
+ */
+
+void library_add_path_combined(char *combined)
+{
+	char *name = NULL, *path = NULL;
+
+	name = strdup(combined);
+	if (name == NULL)
+		return;
+	
+	path = strchr(name, ':');
+	if (path == NULL)
+		return;
+	
+	*path++ = '\0';
+
+	library_add_path(name, path);
+}
+
+
+/**
+ * Add a path definition to the list of library file paths.
+ *
+ * \param *name		The name of the path.
+ * \param *path		The file path.
+ */
+
+void library_add_path(char *name, char *path)
+{
+	struct library_path	*new = NULL;
+
+	if (name == NULL || path == NULL)
+		return;
+
+	new = malloc(sizeof(struct library_path));
+	if (new == NULL)
+		return;
+
+	printf("Adding path '%s' to '%s'\n", name, path);
+
+	new->name = strdup(name);
+	new->path = strdup(path);
+
+	new->next = library_path_head;
+	library_path_head = new;
+}
+
 
 /**
  * Add a file to the list of files to be processed. The name is supplied raw, and
@@ -55,16 +119,44 @@ static struct library_file	*library_file_head = NULL;
 
 void library_add_file(char *file)
 {
+	struct library_path	*paths = library_path_head;
 	struct library_file	*new = NULL;
+	char			*copy = NULL, *tail = NULL, *temp;
 
 	printf("Adding file: '%s'\n", file);
+
+	copy = strdup(file);
+	if (copy == NULL)
+		return;
+
+	tail = strchr(copy, ':');
+	if (tail != NULL) {
+		*tail++ = '\0';
+
+		while (paths != NULL && strcmp(paths->name, copy) != 0)
+			paths = paths->next;
+
+		if (paths != NULL) {
+			temp = copy;
+
+			copy = malloc(sizeof(char) * (strlen(paths->path) + strlen(tail) + 1));
+			if (copy == NULL) {
+				free(temp);
+				return;
+			}
+
+			strcpy(copy, paths->path);
+			strcat(copy, tail);
+			free(temp);
+		}
+	}
 
 	new = malloc(sizeof(struct library_file));
 	if (new == NULL)
 		return;
 
 	new->next = NULL;
-	new->file = strdup(file);
+	new->file = copy;
 	if (new->file == NULL) {
 		free(new);
 		return;
