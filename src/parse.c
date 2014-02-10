@@ -413,6 +413,7 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			case KWD_PROC:
 				parse_process_fnproc(&read, &write);
 				break;
+			case KWD_DATA:
 			case KWD_REM:
 				parse_process_to_line_end(&read, &write);
 				break;
