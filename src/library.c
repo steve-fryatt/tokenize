@@ -37,6 +37,8 @@
 
 #include "library.h"
 
+#include "string.h"
+
 struct library_file {
 	char			*file;		/**< Pointer to the name of the file.	*/
 
@@ -133,7 +135,7 @@ void library_add_file(char *file)
 	if (tail != NULL) {
 		*tail++ = '\0';
 
-		while (paths != NULL && strcmp(paths->name, copy) != 0)
+		while (paths != NULL && string_nocase_strcmp(paths->name, copy) != 0)
 			paths = paths->next;
 
 		if (paths != NULL) {

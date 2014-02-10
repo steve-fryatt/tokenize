@@ -7,7 +7,7 @@ REM 1.01 (8 September 2002)
 :
 ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
 :
-LIBRARY "BASIC:Wimplib"
+LIBRARY "BASIC:WimpLib"
 :
 PROCinitialise
 :
@@ -328,6 +328,7 @@ REM Link the code onto the NOT EventV list.
 SYS "OS_Claim",&10,code_block%+12,0
 SYS "OS_Byte",14,&10
 PRINT "hello" : *This is a star command!
+PRINT "world" : DATA This is some DATA : That DATA not tokenised!
 GOTO 139
 GOTO &10
 GOTO 204

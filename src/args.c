@@ -37,6 +37,8 @@
 
 #include "args.h"
 
+#include "string.h"
+
 
 /**
  * Process a program's command line options, returning a pointer to the first
@@ -141,7 +143,7 @@ struct args_option *args_process_line(int argc, char *argv[], char *definition)
 		
 			name = argv[i] + 1;
 
-			while (search != NULL && strcmp(name, search->name) != 0)
+			while (search != NULL && string_nocase_strcmp(name, search->name) != 0)
 				search = search->next;
 
 			if (search == NULL) {

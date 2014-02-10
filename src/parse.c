@@ -37,6 +37,8 @@
 
 #include "parse.h"
 
+#include "library.h"
+
 
 #define MAX_TOKENISED_LINE 1024
 
@@ -252,10 +254,11 @@ static int parse_keyword_index[] = {
 };
 
 static char parse_buffer[MAX_TOKENISED_LINE];
+static char library_path[MAX_TOKENISED_LINE];
 
 
 static int parse_match_token(char **buffer);
-static bool parse_process_string(char **read, char **write);
+static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
 static void parse_process_binary_constant(char **read, char **write, int *extra_spaces);
 static void parse_process_fnproc(char **read, char **write);
@@ -280,11 +283,11 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
 	int			token, extra_spaces = 0, leading_spaces = 0;
-	enum parse_error	error = PARSE_NO_ERROR;
 
 	bool	statement_start = true;		/**< True while we're at the start of a statement.	*/
 	bool	line_start = true;		/**< True while we're at the start of a line.		*/
 	bool	constant_due = false;		/**< True if a line number constant could be coming up.	*/
+	bool	library_path_due = false;	/**< True if we're expecting a library path.		*/
 
 	/* Skip any leading whitespace on the line. */
 
@@ -356,20 +359,27 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			statement_start = false;
 			line_start = false;
 			constant_due = false;
+			library_path_due = false;
 		} else if (*read == '\"') {
 			/* Copy strings as a lump. */
-			if (!parse_process_string(&read, &write))
+			if (!parse_process_string(&read, &write, (library_path_due == true) ? library_path : NULL))
 				return NULL;
+
+			if (library_path_due && *library_path != '\0') {
+				library_add_file(library_path);
+			}
 
 			statement_start = false;
 			line_start = false;
 			constant_due = false;
+			library_path_due = false;
 		} else if (*read == ':') {
 			/* Handle breaks in statements. */
 			*write++ = *read++;
 
 			statement_start = true;
 			constant_due = false;
+			library_path_due = false;
 		} else if (*read >= 'A' && *read <= 'Z' && (token = parse_match_token(&read)) != -1) {
 			/* Handle keywords */
 			unsigned bytes;
@@ -400,6 +410,7 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			}
 
 			constant_due = false;
+			library_path_due = false;
 
 			switch (token) {
 			case KWD_ELSE:
@@ -417,6 +428,9 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			case KWD_REM:
 				parse_process_to_line_end(&read, &write);
 				break;
+			case KWD_LIBRARY:
+				library_path_due = true;
+				break;
 			}
 
 			statement_start = false;
@@ -427,18 +441,21 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 
 			statement_start = false;
 			line_start = false;
+			library_path_due = false;
 		} else if ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z')) {
 			/* Handle variable names */
 			parse_process_variable(&read, &write);
 
 			statement_start = false;
 			line_start = false;
+			library_path_due = false;
 		} else if ((*read >= '0' && *read <= '9') || *read == '&' || *read == '%' || *read == '.') {
 			/* Handle numeric constants. */
 			parse_process_numeric_constant(&read, &write);
 			
 			statement_start = false;
 			line_start = false;
+			library_path_due = false;
 		} else if (*read == '*' && statement_start) {
 			/* It's a star command, so run out to the end of the line. */
 
@@ -448,6 +465,7 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			if (!isspace(*read)) {
 				statement_start = false;
 				line_start = false;
+				library_path_due = false;
 			}
 
 			if (!(isspace(*read) || *read == ','))
@@ -610,10 +628,11 @@ static int parse_match_token(char **buffer)
  *
  * \param **read	Pointer to the current read pointer.
  * \param **write	Pointer to the current write pointer.
+ * \param *dump		Pointer to buffer to take string contents, or NULL.
  * \return		True on success; False on error.
  */
 
-static bool parse_process_string(char **read, char **write)
+static bool parse_process_string(char **read, char **write, char *dump)
 {
 	bool string_closed = false;
 
@@ -628,8 +647,14 @@ static bool parse_process_string(char **read, char **write)
 		else if (**read == '\"' && (**read + 1) == '\"')
 			*(*write)++ = *(*read)++;
 
+		if (dump != NULL && !string_closed)
+			*dump++ = **read;
+
 		*(*write)++ = *(*read)++;
 	}
+
+	if (dump != NULL)
+		*dump = '\0';
 
 	if (!string_closed) {
 		printf("Missing string terminator");

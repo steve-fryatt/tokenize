@@ -97,8 +97,8 @@ MENUGENFLAGS := -d
 
 # Includes and libraries.
 
-INCLUDES := -I$(GCCSDK_INSTALL_ENV)/include
-LINKS := -L$(GCCSDK_INSTALL_ENV)/lib
+#INCLUDES := -I$(GCCSDK_INSTALL_ENV)/include
+#LINKS := -L$(GCCSDK_INSTALL_ENV)/lib
 
 
 # Set up the various build directories.
@@ -134,7 +134,7 @@ endif
 MANSRC := Source
 MANSPR := ManSprite
 
-OBJS := args.o library.o parse.o tokenize.o
+OBJS := args.o library.o parse.o string.o tokenize.o
 
 
 # Build everything, but don't package it for release.
