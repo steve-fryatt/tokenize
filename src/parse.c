@@ -225,32 +225,32 @@ static struct keyword parse_keywords[] = {
  */
 
 static int parse_keyword_index[] = {
-	0,	/**< A	*/
-	9,	/**< B	*/
-	13,	/**< C	*/
-	27,	/**< D	*/
-	34,	/**< E	*/
-	50,	/**< F	*/
-	54,	/**< G	*/
-	59,	/**< H	*/
-	61,	/**< I	*/
-	-1,	/**< J	*/
-	-1,	/**< K	*/
-	68,	/**< L	*/
-	80,	/**< M	*/
-	85,	/**< N	*/
-	88,	/**< O	*/
-	100,	/**< P	*/
-	109,	/**< Q	*/
-	110,	/**< R	*/
-	121,	/**< S	*/
-	135,	/**< T	*/
-	148,	/**< U	*/
-	150,	/**< V	*/
-	155,	/**< W	*/
-	-1,	/**< X	*/
-	-1,	/**< Y	*/
-	-1	/**< Z	*/
+	KWD_ABS,	/**< A	*/
+	KWD_BEAT,	/**< B	*/
+	KWD_CALL,	/**< C	*/
+	KWD_DATA,	/**< D	*/
+	KWD_EDIT,	/**< E	*/
+	KWD_FALSE,	/**< F	*/
+	KWD_GCOL,	/**< G	*/
+	KWD_HELP,	/**< H	*/
+	KWD_IF,		/**< I	*/
+	-1,		/**< J	*/
+	-1,		/**< K	*/
+	KWD_LEFT$,	/**< L	*/
+	KWD_MID$,	/**< M	*/
+	KWD_NEW,	/**< N	*/
+	KWD_OF,		/**< O	*/
+	KWD_PAGE,	/**< P	*/
+	KWD_QUIT,	/**< Q	*/
+	KWD_READ,	/**< R	*/
+	KWD_SAVE,	/**< S	*/
+	KWD_TAB,	/**< T	*/
+	KWD_UNTIL,	/**< U	*/
+	KWD_VAL,	/**< V	*/
+	KWD_WAIT,	/**< W	*/
+	-1,		/**< X	*/
+	-1,		/**< Y	*/
+	-1		/**< Z	*/
 };
 
 static char parse_buffer[MAX_TOKENISED_LINE];
