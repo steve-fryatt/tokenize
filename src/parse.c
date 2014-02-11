@@ -257,6 +257,7 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 static char library_path[MAX_TOKENISED_LINE];
 
 
+static bool parse_process_statement(char **read, char **write, int *real_pos, int indent, bool *assembler, bool line_start);
 static int parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
@@ -282,19 +283,17 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 {
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
-	int			token, extra_spaces = 0, leading_spaces = 0;
+	int			leading_spaces = 0;
 
-	bool	statement_start = true;		/**< True while we're at the start of a statement.	*/
-	bool	line_start = true;		/**< True while we're at the start of a line.		*/
-	bool	constant_due = false;		/**< True if a line number constant could be coming up.	*/
-	bool	library_path_due = false;	/**< True if we're expecting a library path.		*/
+	bool	line_start = true;		/**< True while we're at the start of a line.				*/
+	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
 
 	/* Skip any leading whitespace on the line. */
 
 	while (*read != '\n' && isspace(*read)) {
 		if (*read == '\t' && indent > 0) {
 			leading_spaces = ((leading_spaces + 1) / indent) + indent;
-		} else {
+		} else if (indent > 0) {
 			leading_spaces++;
 		}
 	
@@ -325,7 +324,7 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 	while (*read != '\n' && isspace(*read)) {
 		if (*read == '\t' && indent > 0) {
 			leading_spaces = ((leading_spaces + 1) / indent) + indent;
-		} else {
+		} else if (indent > 0) {
 			leading_spaces++;
 		}
 	
@@ -337,50 +336,98 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 	*write++ = (*line_number & 0x00ff);
 	*write++ = 0;
 
+	real_pos = leading_spaces;
+
 	for (; leading_spaces > 0; leading_spaces--)
 		*write++ = ' ';
 
 	while (*read != '\n') {
+		bool keep = parse_process_statement(&read, &write, &real_pos, indent, assembler, line_start);
+		
+		if (keep && *read == ':') {
+			*write++ = *read++;
+			real_pos++;
+		} else if (*read == ':') {
+			read++;
+		}
+		
+		line_start = false;
+	}
+
+	/* Write the line length, and terminate the buffer. */
+
+	*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
+	*write = '\0';
+
+	return parse_buffer;
+}
+
+
+/**
+ * Process a single statement from the input buffer (up to the next colon or
+ * line end), writing the tokenised form to the output buffer.
+ *
+ * \param **read	Pointer to the pointer to the input buffer.
+ * \param **write	Pointer to the pointer to the output buffer.
+ * \param *real_pos	Pointer to the variable holding the real line pos.
+ * \param indent	The number of spaces used for a tab (0 to disable).
+ * \param *assembler	Pointer to a variable indicating if we're in an assember block.
+ * \param line_start	True if this is the first statement on a line.
+ * \return		True if the statement has been kept; False if removed.
+ */
+
+static bool parse_process_statement(char **read, char **write, int *real_pos, int indent, bool *assembler, bool line_start)
+{
+	bool	statement_start = true;		/**< True while we're at the start of a statement.		*/
+	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
+	bool	library_path_due = false;	/**< True if we're expecting a library path.			*/
+	bool	keep_statement = true;		/**< False if the statement is to be removed.			*/
+	bool	clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
+
+	int	extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
+	int	token = 0;			/**< Storage for any keyword tokens that we look up.		*/
+
+	char	*start_pos = *write;		/**< A pointer to the start of the statement.			*/
+
+	while (**read != '\n' && **read != ':') {
 		if (*assembler == true) {
 			/* Assembler is a special case. We just copy text across
 			 * to the buffer until we find a closing delimiter.
 			 */
 
-			if (*read == ']')
+			if (**read == ']')
 				*assembler = false;
 
-			*write++ = *read++;
-		} else if (*read == '[') {
+			*(*write)++ = *(*read)++;
+		} else if (**read == '[') {
 			/* This is the start of an assembler block. */
 		
 			*assembler = true;
-			*write++ = *read++;
+			*(*write)++ = *(*read)++;
 
 			statement_start = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-		} else if (*read == '\"') {
+			clean_to_end = false;
+		} else if (**read == '\"') {
 			/* Copy strings as a lump. */
-			if (!parse_process_string(&read, &write, (library_path_due == true) ? library_path : NULL))
+			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL))
 				return NULL;
+
+			clean_to_end = false;
 
 			if (library_path_due && *library_path != '\0') {
 				library_add_file(library_path);
+				clean_to_end = true;
+				keep_statement = false;
 			}
 
 			statement_start = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-		} else if (*read == ':') {
-			/* Handle breaks in statements. */
-			*write++ = *read++;
-
-			statement_start = true;
-			constant_due = false;
-			library_path_due = false;
-		} else if (*read >= 'A' && *read <= 'Z' && (token = parse_match_token(&read)) != -1) {
+		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != -1) {
 			/* Handle keywords */
 			unsigned bytes;
 
@@ -403,9 +450,9 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 			 */
 
 			extra_spaces += strlen(parse_keywords[token].name) - 1;
-			*write++ = bytes & 0xff;
+			*(*write)++ = bytes & 0xff;
 			if ((bytes & 0xff00) != 0) {
-				*write++ = (bytes & 0xff00) >> 8;
+				*(*write)++ = (bytes & 0xff00) >> 8;
 				extra_spaces--;
 			}
 
@@ -422,11 +469,11 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 				break;
 			case KWD_FN:
 			case KWD_PROC:
-				parse_process_fnproc(&read, &write);
+				parse_process_fnproc(read, write);
 				break;
 			case KWD_DATA:
 			case KWD_REM:
-				parse_process_to_line_end(&read, &write);
+				parse_process_to_line_end(read, write);
 				break;
 			case KWD_LIBRARY:
 				library_path_due = true;
@@ -435,63 +482,76 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 
 			statement_start = false;
 			line_start = false;
-		} else if ((*read >= '0' && *read <= '9') && constant_due) {
+			clean_to_end = false;
+		} else if ((**read >= '0' && **read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
-			parse_process_binary_constant(&read, &write, &extra_spaces);
+			parse_process_binary_constant(read, write, &extra_spaces);
 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-		} else if ((*read >= 'a' && *read <= 'z') || (*read >= 'A' && *read <= 'Z')) {
+			clean_to_end = false;
+		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z')) {
 			/* Handle variable names */
-			parse_process_variable(&read, &write);
+			parse_process_variable(read, write);
 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-		} else if ((*read >= '0' && *read <= '9') || *read == '&' || *read == '%' || *read == '.') {
+			clean_to_end = false;
+		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
-			parse_process_numeric_constant(&read, &write);
+			parse_process_numeric_constant(read, write);
 			
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-		} else if (*read == '*' && statement_start) {
+			clean_to_end = false;
+		} else if (**read == '*' && statement_start) {
 			/* It's a star command, so run out to the end of the line. */
 
-			parse_process_to_line_end(&read, &write);
+			parse_process_to_line_end(read, write);
+			clean_to_end = false;
 		} else {
 			/* Handle everything else. */
-			if (!isspace(*read)) {
+			if (!isspace(**read)) {
 				statement_start = false;
 				line_start = false;
 				library_path_due = false;
+				clean_to_end = false;
 			}
 
-			if (!(isspace(*read) || *read == ','))
+			if (!(isspace(**read) || **read == ','))
 				constant_due = false;
 
-			if (*read == '\t' && indent > 0) {
-				int insert = indent - ((write - parse_buffer + extra_spaces - 4) % indent);
+			if (**read == '\t' && indent > 0) {
+				int insert = indent - ((*real_pos + (*write - start_pos) + extra_spaces) % indent);
 				if (insert == 0)
 					insert = indent;
 				
 				for (; insert > 0; insert--)
-					*write++ = ' ';
+					*(*write)++ = ' ';
 				
-				read++;
+				(*read)++;
 			} else {
-				*write++ = *read++;
+				*(*write)++ = *(*read)++;
 			}
 		}
 	}
 
-	/* Write the line length, and terminate the buffer. */
+	/* Depending on whether we will be keeping the statement, either
+	 * update the line pointer or rewind the write buffer.
+	 */
 
-	*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
-	*write = '\0';
+	if (keep_statement) {
+		*real_pos += (*write - start_pos) + extra_spaces;
+	} else {
+		*write = start_pos;
+		if (!clean_to_end)
+			printf("Error in removed statement");
+	}
 
-	return parse_buffer;
+	return keep_statement;
 }
 
 
