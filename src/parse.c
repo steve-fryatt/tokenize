@@ -257,7 +257,7 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 static char library_path[MAX_TOKENISED_LINE];
 
 
-static bool parse_process_statement(char **read, char **write, int *real_pos, int indent, bool *assembler, bool line_start);
+static bool parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
 static int parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
@@ -271,7 +271,7 @@ static void parse_process_to_line_end(char **read, char **write);
  * remain valid until the function is called again.
  *
  * \param *line		Pointer to the line to process,
- * \param indent	0 for no line indents; >0 to indent using tab size n.
+ * \param *options	Parse options block to set the configuration
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
@@ -279,7 +279,7 @@ static void parse_process_to_line_end(char **read, char **write);
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line_number)
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number)
 {
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
@@ -291,9 +291,9 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 	/* Skip any leading whitespace on the line. */
 
 	while (*read != '\n' && isspace(*read)) {
-		if (*read == '\t' && indent > 0) {
-			leading_spaces = ((leading_spaces + 1) / indent) + indent;
-		} else if (indent > 0) {
+		if (*read == '\t' && options->tab_indent > 0) {
+			leading_spaces = ((leading_spaces + 1) / options->tab_indent) + options->tab_indent;
+		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
 	
@@ -322,9 +322,9 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 	/* Again, trim any whitespace that followed the line number. */
 
 	while (*read != '\n' && isspace(*read)) {
-		if (*read == '\t' && indent > 0) {
-			leading_spaces = ((leading_spaces + 1) / indent) + indent;
-		} else if (indent > 0) {
+		if (*read == '\t' && options->tab_indent > 0) {
+			leading_spaces = ((leading_spaces + 1) / options->tab_indent) + options->tab_indent;
+		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
 	
@@ -342,7 +342,7 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
 		*write++ = ' ';
 
 	while (*read != '\n') {
-		bool keep = parse_process_statement(&read, &write, &real_pos, indent, assembler, line_start);
+		bool keep = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
 		
 		if (keep && *read == ':') {
 			*write++ = *read++;
@@ -370,13 +370,13 @@ char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line
  * \param **read	Pointer to the pointer to the input buffer.
  * \param **write	Pointer to the pointer to the output buffer.
  * \param *real_pos	Pointer to the variable holding the real line pos.
- * \param indent	The number of spaces used for a tab (0 to disable).
+ * \param *options	The number of spaces used for a tab (0 to disable).
  * \param *assembler	Pointer to a variable indicating if we're in an assember block.
  * \param line_start	True if this is the first statement on a line.
  * \return		True if the statement has been kept; False if removed.
  */
 
-static bool parse_process_statement(char **read, char **write, int *real_pos, int indent, bool *assembler, bool line_start)
+static bool parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start)
 {
 	bool	statement_start = true;		/**< True while we're at the start of a statement.		*/
 	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
@@ -417,7 +417,7 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 
 			clean_to_end = false;
 
-			if (library_path_due && *library_path != '\0') {
+			if (library_path_due && *library_path != '\0' && options->link_libraries) {
 				library_add_file(library_path);
 				clean_to_end = true;
 				keep_statement = false;
@@ -458,6 +458,7 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 
 			constant_due = false;
 			library_path_due = false;
+			clean_to_end = false;
 
 			switch (token) {
 			case KWD_ELSE:
@@ -471,8 +472,12 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 			case KWD_PROC:
 				parse_process_fnproc(read, write);
 				break;
-			case KWD_DATA:
 			case KWD_REM:
+				if (options->crunch_rems) {
+					keep_statement = false;
+					clean_to_end = true;
+				}
+			case KWD_DATA:
 				parse_process_to_line_end(read, write);
 				break;
 			case KWD_LIBRARY:
@@ -482,7 +487,6 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 
 			statement_start = false;
 			line_start = false;
-			clean_to_end = false;
 		} else if ((**read >= '0' && **read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
 			parse_process_binary_constant(read, write, &extra_spaces);
@@ -524,10 +528,10 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 			if (!(isspace(**read) || **read == ','))
 				constant_due = false;
 
-			if (**read == '\t' && indent > 0) {
-				int insert = indent - ((*real_pos + (*write - start_pos) + extra_spaces) % indent);
+			if (**read == '\t' && options->tab_indent > 0) {
+				int insert = options->tab_indent - ((*real_pos + (*write - start_pos) + extra_spaces) % options->tab_indent);
 				if (insert == 0)
-					insert = indent;
+					insert = options->tab_indent;
 				
 				for (; insert > 0; insert--)
 					*(*write)++ = ' ';
@@ -548,7 +552,7 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, in
 	} else {
 		*write = start_pos;
 		if (!clean_to_end)
-			printf("Error in removed statement");
+			printf("Error in removed statement\n");
 	}
 
 	return keep_statement;

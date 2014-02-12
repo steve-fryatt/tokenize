@@ -46,8 +46,8 @@
 
 
 
-bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_increment);
-void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_increment);
+bool tokenize_run_job(char *output_file, struct parse_options *options);
+void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options);
 
 int main(int argc, char *argv[])
 {
@@ -55,26 +55,46 @@ int main(int argc, char *argv[])
 	struct args_option	*options;
 	struct args_data	*option_data;
 	char *output_file	= NULL;
+	struct parse_options	parse_options;
 
-	unsigned		line_increment = 10;		/**< The default line number increment.		*/
-	unsigned		tab_indent = 8;			/**< The default tab indent.			*/
-
+	parse_options.tab_indent = 8;
+	parse_options.line_increment = 10;
+	parse_options.link_libraries = false;
+	parse_options.crunch_body_rems = false;
+	parse_options.crunch_rems = false;
 
 	//stack_initialise(MAX_STACK_SIZE);
 
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K");
 	if (options == NULL) {
 		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
 	}
 
 	while (options != NULL) {
-		if (strcmp(options->name, "increment") == 0) {
+		if (strcmp(options->name, "crunch") == 0) {
+			if (options->data != NULL) {
+				char *mode = options->data->value.string;
+				
+				while (mode != NULL && *mode != '\0') {
+					switch (*mode++) {
+					case 'R':
+						parse_options.crunch_rems = true;
+					case 'r':
+						parse_options.crunch_body_rems = true;
+						break;
+					}
+				}
+			}
+		} else if (strcmp(options->name, "increment") == 0) {
 			if (options->data != NULL)
-				line_increment = options->data->value.integer;
+				parse_options.line_increment = options->data->value.integer;
+		} else if (strcmp(options->name, "link") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				parse_options.link_libraries = true;
 		} else if (strcmp(options->name, "source") == 0) {
 			if (options->data != NULL) {
 				option_data = options->data;
@@ -106,7 +126,7 @@ int main(int argc, char *argv[])
 			}
 		} else if (strcmp(options->name, "tab") == 0) {
 			if (options->data != NULL)
-				tab_indent = options->data->value.integer;
+				parse_options.tab_indent = options->data->value.integer;
 		}
 	
 		options = options->next;
@@ -117,16 +137,19 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	if (!tokenize_run_job(output_file, line_increment, tab_indent))
+	if (!tokenize_run_job(output_file, &parse_options))
 		return 1;
 
 	return 0;
 }
 
-bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_indent)
+bool tokenize_run_job(char *output_file, struct parse_options *options)
 {
 	FILE		*in, *out;
 	unsigned	line_number = 0;
+
+	if (output_file == NULL || options == NULL)
+		return false;
 
 	printf("Open for file '%s'\n", output_file);
 
@@ -135,7 +158,7 @@ bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_i
 		return false;
 
 	while ((in = library_get_file()) != NULL) {
-		tokenize_parse_file(in, out, &line_number, line_increment, tab_indent);
+		tokenize_parse_file(in, out, &line_number, options);
 		fclose(in);
 	}
 
@@ -148,18 +171,18 @@ bool tokenize_run_job(char *output_file, unsigned line_increment, unsigned tab_i
 }
 
 
-void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, unsigned line_increment, unsigned tab_indent)
+void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options)
 {
 	char		line[MAX_INPUT_LINE_LENGTH], *tokenised;
 	bool		assembler = false;
 
-	if (in == NULL || out == NULL)
+	if (in == NULL || out == NULL || line_number == NULL || options == NULL)
 		return;
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
-		*line_number += line_increment;
+		*line_number += options->line_increment;
 		
-		tokenised = parse_process_line(line, tab_indent, &assembler, line_number);
+		tokenised = parse_process_line(line, options, &assembler, line_number);
 		if (tokenised != NULL)
 			fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
 		else

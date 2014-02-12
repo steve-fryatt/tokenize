@@ -192,6 +192,20 @@
 #define KWD_WHILE     157
 #define KWD_WIDTH     158
 
+/**
+ * Structure defining the parse options.
+ */
+
+struct parse_options {
+	unsigned	line_increment;		/**< The line number increment for AUTO.		*/
+
+	unsigned	tab_indent;		/**< The number of spaces to convert tabs into.		*/
+
+	bool		link_libraries;		/**< True to link LIBRARY files; False to ignore.	*/
+
+	bool		crunch_body_rems;	/**< True to remove all body REM statements.		*/
+	bool		crunch_rems;		/**< True to remove all REM statements.			*/
+};
 
 enum parse_error {
 	PARSE_NO_ERROR = 0,		/**< No Error.				*/
@@ -203,7 +217,7 @@ enum parse_error {
  * remain valid until the function is called again.
  *
  * \param *line		Pointer to the line to process.
- * \param indent	0 for no line indents; >0 to indent using tab size n.
+ * \param *options	Parse options block to set the configuration
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
@@ -211,7 +225,7 @@ enum parse_error {
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, int indent, bool *assembler, unsigned *line_number);
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number);
 
 #endif
 
