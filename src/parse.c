@@ -287,6 +287,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
+	bool	all_deleted = true;		/**< True while all the statements on the line have been deleted.	*/
 
 	/* Skip any leading whitespace on the line. */
 
@@ -344,12 +345,17 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	while (*read != '\n') {
 		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
 
-		if (status != PARSE_DELETED && *read == ':') {
-			*write++ = *read++;
-			real_pos++;
+		if (status != PARSE_DELETED) {
+			if (all_deleted == true)
+				all_deleted = false;
 
-			if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
-				options->crunch_rems = true;
+			if (*read == ':') {
+				*write++ = *read++;
+				real_pos++;
+
+				if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
+					options->crunch_rems = true;
+			}
 		} else if (*read == ':') {
 			read++;
 		}
@@ -359,8 +365,12 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	/* Write the line length, and terminate the buffer. */
 
-	*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
-	*write = '\0';
+	if (all_deleted == true) {
+		*parse_buffer = '\0';
+	} else {
+		*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
+		*write = '\0';
+	}
 
 	return parse_buffer;
 }

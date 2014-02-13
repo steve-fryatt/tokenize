@@ -183,10 +183,12 @@ void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 		*line_number += options->line_increment;
 		
 		tokenised = parse_process_line(line, options, &assembler, line_number);
-		if (tokenised != NULL)
-			fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
-		else
+		if (tokenised != NULL) {
+			if (*tokenised != '\0')
+				fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
+		} else {
 			break;
+		}
 	}
 }
 
