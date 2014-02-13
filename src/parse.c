@@ -562,6 +562,13 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		}
 	}
 
+	/* If the statement is only whitespace, and we're removing empty statements,
+	 * flag the statement to be deleted.
+	 */
+
+	if (status == PARSE_WHITESPACE && options->crunch_empty)
+		status = PARSE_DELETED;
+
 	/* Depending on whether we will be keeping the statement, either
 	 * update the line pointer or rewind the write buffer.
 	 */

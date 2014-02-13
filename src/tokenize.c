@@ -81,6 +81,9 @@ int main(int argc, char *argv[])
 				
 				while (mode != NULL && *mode != '\0') {
 					switch (*mode++) {
+					case 'e':
+						parse_options.crunch_empty = true;
+						break;
 					case 'R':
 						parse_options.crunch_rems = true;
 					case 'r':

@@ -205,6 +205,7 @@ struct parse_options {
 
 	bool		crunch_body_rems;	/**< True to remove all body REM statements.		*/
 	bool		crunch_rems;		/**< True to remove all REM statements.			*/
+	bool		crunch_empty;		/**< True to remove all empty statements.		*/
 };
 
 enum parse_status {
