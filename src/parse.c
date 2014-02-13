@@ -257,7 +257,7 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 static char library_path[MAX_TOKENISED_LINE];
 
 
-static bool parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
 static int parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
@@ -342,11 +342,14 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		*write++ = ' ';
 
 	while (*read != '\n') {
-		bool keep = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
-		
-		if (keep && *read == ':') {
+		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
+
+		if (status != PARSE_DELETED && *read == ':') {
 			*write++ = *read++;
 			real_pos++;
+
+			if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
+				options->crunch_rems = true;
 		} else if (*read == ':') {
 			read++;
 		}
@@ -373,15 +376,16 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
  * \param *options	The number of spaces used for a tab (0 to disable).
  * \param *assembler	Pointer to a variable indicating if we're in an assember block.
  * \param line_start	True if this is the first statement on a line.
- * \return		True if the statement has been kept; False if removed.
+ * \return		The status of the parsed statement.
  */
 
-static bool parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start)
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start)
 {
+	enum parse_status	status = PARSE_WHITESPACE;
+
 	bool	statement_start = true;		/**< True while we're at the start of a statement.		*/
 	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
 	bool	library_path_due = false;	/**< True if we're expecting a library path.			*/
-	bool	keep_statement = true;		/**< False if the statement is to be removed.			*/
 	bool	clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
 
 	int	extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
@@ -390,6 +394,9 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, st
 	char	*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
 	while (**read != '\n' && **read != ':') {
+		if (status == PARSE_WHITESPACE && !isspace(**read))
+			status = PARSE_COMPLETE;
+
 		if (*assembler == true) {
 			/* Assembler is a special case. We just copy text across
 			 * to the buffer until we find a closing delimiter.
@@ -413,14 +420,14 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, st
 		} else if (**read == '\"') {
 			/* Copy strings as a lump. */
 			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL))
-				return NULL;
+				return PARSE_ERROR_OPEN_STRING;
 
 			clean_to_end = false;
 
 			if (library_path_due && *library_path != '\0' && options->link_libraries) {
 				library_add_file(library_path);
 				clean_to_end = true;
-				keep_statement = false;
+				status = PARSE_DELETED;
 			}
 
 			statement_start = false;
@@ -474,8 +481,10 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, st
 				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
-					keep_statement = false;
+					status = PARSE_DELETED;
 					clean_to_end = true;
+				} else {
+					status = PARSE_COMMENT;
 				}
 			case KWD_DATA:
 				parse_process_to_line_end(read, write);
@@ -547,15 +556,15 @@ static bool parse_process_statement(char **read, char **write, int *real_pos, st
 	 * update the line pointer or rewind the write buffer.
 	 */
 
-	if (keep_statement) {
-		*real_pos += (*write - start_pos) + extra_spaces;
-	} else {
+	if (status == PARSE_DELETED) {
 		*write = start_pos;
 		if (!clean_to_end)
 			printf("Error in removed statement\n");
+	} else {
+		*real_pos += (*write - start_pos) + extra_spaces;
 	}
 
-	return keep_statement;
+	return status;
 }
 
 

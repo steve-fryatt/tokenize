@@ -207,9 +207,12 @@ struct parse_options {
 	bool		crunch_rems;		/**< True to remove all REM statements.			*/
 };
 
-enum parse_error {
-	PARSE_NO_ERROR = 0,		/**< No Error.				*/
-	PARSE_MISMATCHED_QUOTES		/**< Mismatched string delimiter.	*/
+enum parse_status {
+	PARSE_DELETED = 0,		/**< The statement was deleted by the parser.		*/
+	PARSE_WHITESPACE = 1,		/**< The statement consisted entirely of whitespace.	*/
+	PARSE_COMMENT = 2,		/**< The statement was a comment.			*/
+	PARSE_COMPLETE = 3,		/**< The statement was none of the above.		*/
+	PARSE_ERROR_OPEN_STRING = 256	/**< Error: unterminated string.			*/
 };
 
 /**
