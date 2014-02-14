@@ -39,6 +39,8 @@
 
 #include "string.h"
 
+#define LIBRARY_MAX_FILENAME 256
+
 struct library_file {
 	char			*file;		/**< Pointer to the name of the file.	*/
 
@@ -57,6 +59,8 @@ static struct library_file	*library_file_head = NULL;
 
 static struct library_path	*library_path_head = NULL;
 
+static char			library_filename_buffer[LIBRARY_MAX_FILENAME];	/**< Buffer holding the last filename.	*/
+static char			*library_filename = NULL;			/**< Pointer to the last filename.	*/
 
 
 /**
@@ -193,6 +197,9 @@ FILE *library_get_file(void)
 
 		file = fopen(library_file_head->file, "r");
 
+		strncpy(library_filename_buffer, library_file_head->file, LIBRARY_MAX_FILENAME);
+		library_filename = library_filename_buffer;
+
 		old = library_file_head;
 		library_file_head = library_file_head->next;
 		if (library_file_tail == old)
@@ -205,3 +212,14 @@ FILE *library_get_file(void)
 	return file;
 }
 
+
+/**
+ * Get the name of the last file to be opened by the library.
+ *
+ * \return		Pointer to the filename, or NULL if none.
+ */
+
+char *library_get_filename(void)
+{
+	return library_filename;
+}

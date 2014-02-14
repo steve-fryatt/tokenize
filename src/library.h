@@ -74,5 +74,14 @@ void library_add_file(char *file);
 
 FILE *library_get_file(void);
 
+
+/**
+ * Get the name of the last file to be opened by the library.
+ *
+ * \return		Pointer to the filename, or NULL if none.
+ */
+
+char *library_get_filename(void);
+
 #endif
 

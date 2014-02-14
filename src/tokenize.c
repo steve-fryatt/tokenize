@@ -207,7 +207,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 
 bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options)
 {
-	char		line[MAX_INPUT_LINE_LENGTH], location[MAX_LOCATION_TEXT], *tokenised;
+	char		line[MAX_INPUT_LINE_LENGTH], location[MAX_LOCATION_TEXT], *tokenised, *file;
 	bool		assembler = false;
 	unsigned	input_line = 0;
 
@@ -215,7 +215,8 @@ bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 		return false;
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
-		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '\?\?\?'", ++input_line);
+		file = library_get_filename();
+		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, (file != NULL) ? file : "unknown file");
 		
 		tokenised = parse_process_line(line, options, &assembler, line_number, location);
 		if (tokenised != NULL) {
