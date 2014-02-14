@@ -197,15 +197,17 @@
  */
 
 struct parse_options {
-	unsigned	line_increment;		/**< The line number increment for AUTO.		*/
+	unsigned	line_increment;		/**< The line number increment for AUTO.			*/
 
-	unsigned	tab_indent;		/**< The number of spaces to convert tabs into.		*/
+	unsigned	tab_indent;		/**< The number of spaces to convert tabs into.			*/
 
-	bool		link_libraries;		/**< True to link LIBRARY files; False to ignore.	*/
+	bool		link_libraries;		/**< True to link LIBRARY files; False to ignore.		*/
 
-	bool		crunch_body_rems;	/**< True to remove all body REM statements.		*/
-	bool		crunch_rems;		/**< True to remove all REM statements.			*/
-	bool		crunch_empty;		/**< True to remove all empty statements.		*/
+	bool		crunch_body_rems;	/**< True to remove all body REM statements.			*/
+	bool		crunch_rems;		/**< True to remove all REM statements.				*/
+	bool		crunch_empty;		/**< True to remove all empty statements.			*/
+	bool		crunch_whitespace;	/**< True to reduce contiguous whitespace to a single space.	*/
+	bool		crunch_all_whitespace;	/**< True to remove all whitespace.				*/
 };
 
 enum parse_status {

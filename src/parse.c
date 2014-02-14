@@ -337,10 +337,12 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	*write++ = (*line_number & 0x00ff);
 	*write++ = 0;
 
-	real_pos = leading_spaces;
+	if (!options->crunch_all_whitespace) {
+		real_pos = leading_spaces;
 
-	for (; leading_spaces > 0; leading_spaces--)
-		*write++ = ' ';
+		for (; leading_spaces > 0; leading_spaces--)
+			*write++ = ' ';
+	}
 
 	while (*read != '\n') {
 		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
@@ -397,6 +399,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
 	bool	library_path_due = false;	/**< True if we're expecting a library path.			*/
 	bool	clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
+	bool	in_whitespace = false;		/**< True if we've just output some whitespace.			*/
 
 	int	extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
 	int	token = 0;			/**< Storage for any keyword tokens that we look up.		*/
@@ -404,8 +407,13 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	char	*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
 	while (**read != '\n' && **read != ':') {
-		if (status == PARSE_WHITESPACE && !isspace(**read))
-			status = PARSE_COMPLETE;
+		if (!isspace(**read)) {
+			if (in_whitespace)
+				in_whitespace = false;
+	
+			if (status == PARSE_WHITESPACE)
+				status = PARSE_COMPLETE;
+		}
 
 		if (*assembler == true) {
 			/* Assembler is a special case. We just copy text across
@@ -547,7 +555,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			if (!(isspace(**read) || **read == ','))
 				constant_due = false;
 
-			if (**read == '\t' && options->tab_indent > 0) {
+			if (**read == '\t' && options->tab_indent > 0 && !(options->crunch_whitespace || options->crunch_all_whitespace)) {
 				int insert = options->tab_indent - ((*real_pos + (*write - start_pos) + extra_spaces) % options->tab_indent);
 				if (insert == 0)
 					insert = options->tab_indent;
@@ -556,8 +564,17 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 					*(*write)++ = ' ';
 				
 				(*read)++;
+				
+				in_whitespace = true;
 			} else {
-				*(*write)++ = *(*read)++;
+				if (isspace(**read)) {
+					if (!(options->crunch_all_whitespace || (options->crunch_whitespace && in_whitespace)))
+						*(*write)++ = ' ';
+					in_whitespace = true;
+					(*read)++;
+				} else {
+					*(*write)++ = *(*read)++;
+				}
 			}
 		}
 	}

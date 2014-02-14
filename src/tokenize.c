@@ -62,6 +62,9 @@ int main(int argc, char *argv[])
 	parse_options.link_libraries = false;
 	parse_options.crunch_body_rems = false;
 	parse_options.crunch_rems = false;
+	parse_options.crunch_empty = false;
+	parse_options.crunch_whitespace = false;
+	parse_options.crunch_all_whitespace = false;
 
 	//stack_initialise(MAX_STACK_SIZE);
 
@@ -88,6 +91,11 @@ int main(int argc, char *argv[])
 						parse_options.crunch_rems = true;
 					case 'r':
 						parse_options.crunch_body_rems = true;
+						break;
+					case 'W':
+						parse_options.crunch_all_whitespace = true;
+					case 'w':
+						parse_options.crunch_whitespace = true;
 						break;
 					}
 				}
