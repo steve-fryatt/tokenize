@@ -211,11 +211,13 @@ struct parse_options {
 };
 
 enum parse_status {
-	PARSE_DELETED = 0,		/**< The statement was deleted by the parser.		*/
-	PARSE_WHITESPACE = 1,		/**< The statement consisted entirely of whitespace.	*/
-	PARSE_COMMENT = 2,		/**< The statement was a comment.			*/
-	PARSE_COMPLETE = 3,		/**< The statement was none of the above.		*/
-	PARSE_ERROR_OPEN_STRING = 256	/**< Error: unterminated string.			*/
+	PARSE_DELETED = 0,			/**< The statement was deleted by the parser.		*/
+	PARSE_WHITESPACE = 1,			/**< The statement consisted entirely of whitespace.	*/
+	PARSE_COMMENT = 2,			/**< The statement was a comment.			*/
+	PARSE_COMPLETE = 3,			/**< The statement was none of the above.		*/
+	PARSE_ERROR_OPEN_STRING = 256,		/**< Error: unterminated string.			*/
+	PARSE_ERROR_DELETED_STATEMENT = 257,	/**< Error: unclean deleted statement.			*/
+	PARSE_ERROR_LINE_CONSTANT = 258		/**< Error: line number constant out of range.		*/
 };
 
 /**
@@ -228,10 +230,11 @@ enum parse_status {
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
  *			number; updated on exit if a number was found.
+ * \param *location	Pointer to source file location information.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number);
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number, char *location);
 
 #endif
 

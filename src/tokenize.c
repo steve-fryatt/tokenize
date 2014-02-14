@@ -43,11 +43,12 @@
 
 
 #define MAX_INPUT_LINE_LENGTH 1024
+#define MAX_LOCATION_TEXT 256
 
 
 
 bool tokenize_run_job(char *output_file, struct parse_options *options);
-void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options);
+bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options);
 
 int main(int argc, char *argv[])
 {
@@ -154,10 +155,22 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+
+/**
+ * Run a tokenisation job, writing data to the specified output file. Input
+ * files are taken from the library module, so as to handle any linked libraries
+ * found during parsing.
+ *
+ * \param *output_file	Pointer to the name of the file to write to.
+ * \param *options	Pointer to the tokenisation options.
+ * \return		True on success; false on failure.
+ */
+
 bool tokenize_run_job(char *output_file, struct parse_options *options)
 {
 	FILE		*in, *out;
 	unsigned	line_number = 0;
+	bool		success = true;
 
 	if (output_file == NULL || options == NULL)
 		return false;
@@ -168,8 +181,8 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 	if (out == NULL)
 		return false;
 
-	while ((in = library_get_file()) != NULL) {
-		tokenize_parse_file(in, out, &line_number, options);
+	while ((success == true) && ((in = library_get_file()) != NULL)) {
+		success = tokenize_parse_file(in, out, &line_number, options);
 		fclose(in);
 	}
 
@@ -182,24 +195,44 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 }
 
 
-void tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options)
+/**
+ * Tokenise the contents of a file, sending the results to the output.
+ *
+ * \param *in		The handle of the file to be tokenised.
+ * \param *out		The handle of the file to write the output to.
+ * \param *line_number	Pointer to a variable holding the current line number.
+ * \param *options	Pointer to the tokenisation options.
+ * \return		True on success; false if an error occurred.
+ */
+
+bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options)
 {
-	char		line[MAX_INPUT_LINE_LENGTH], *tokenised;
+	char		line[MAX_INPUT_LINE_LENGTH], location[MAX_LOCATION_TEXT], *tokenised;
 	bool		assembler = false;
+	unsigned	input_line = 0;
 
 	if (in == NULL || out == NULL || line_number == NULL || options == NULL)
-		return;
+		return false;
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
 		*line_number += options->line_increment;
+		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '\?\?\?'", ++input_line);
 		
-		tokenised = parse_process_line(line, options, &assembler, line_number);
+		tokenised = parse_process_line(line, options, &assembler, line_number, location);
 		if (tokenised != NULL) {
+			/* The line tokeniser requests a line be deleted (ie. not
+			 * written to the output) by setting the leading \r to be
+			 * \0 instead (setting the line pointer to NULL signifies
+			 * an error).
+			 */
+
 			if (*tokenised != '\0')
 				fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
 		} else {
-			break;
+			return false;
 		}
 	}
+	
+	return true;
 }
 

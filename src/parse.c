@@ -261,7 +261,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 static int parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
-static void parse_process_binary_constant(char **read, char **write, int *extra_spaces);
+static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces);
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
@@ -277,10 +277,11 @@ static void parse_process_to_line_end(char **read, char **write);
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
  *			number; updated on exit if a number was found.
+ * \param *location	Pointer to source file location information.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number)
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number, char *location)
 {
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
@@ -289,6 +290,9 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
 	bool	all_deleted = true;		/**< True while all the statements on the line have been deleted.	*/
+
+	if (location == NULL)
+		return NULL;
 
 	/* Skip any leading whitespace on the line. */
 
@@ -313,10 +317,13 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		write = parse_buffer;
 		leading_spaces = 0;
 
-		if (read_number > *line_number)
+		if (read_number > 0xffff) {
+			fprintf(stderr, "Error: Line number %u too large at%s\n", read_number, location);
+			return NULL;
+		} else if (read_number > *line_number) {
 			*line_number = read_number;
-		else if (read_number < *line_number) {
-			printf("Line number error\n");
+		} else if (read_number < *line_number) {
+			fprintf(stderr, "Error: Line number %u out of sequence at%s\n", read_number, location);
 			return NULL;
 		}
 	}
@@ -354,25 +361,72 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	while (*read != '\n') {
 		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
 
-		if (status != PARSE_DELETED) {
+		if (status == PARSE_DELETED) {
+			/* If the statement was deleted, remove any following separator. */
+		
+			if (*read == ':')
+				read++;
+		} else if (status == PARSE_WHITESPACE || status == PARSE_COMMENT || status == PARSE_COMPLETE) {
+			/* If the statement was parsed OK, process it. */
+
+			/* It's no longer true that all the statements on the line have
+			 * been deleted, because this one hansn't.
+			 */
+
 			if (all_deleted == true)
 				all_deleted = false;
+
+			/* If there's a separator following, copy it into the
+			 * output buffer.
+			 */
 
 			if (*read == ':') {
 				*write++ = *read++;
 				real_pos++;
-
-				if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
-					options->crunch_rems = true;
 			}
-		} else if (*read == ':') {
-			read++;
+
+			/* If this isn't a comment, and we're due to remove all of the
+			 * comments after the first block, then update the crunch
+			 * flags to make it so.
+			 */
+
+			if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
+				options->crunch_rems = true;
+		} else {
+			/* The statement tokeniser returned an error, so report
+			 * it with a suitable message and quit.
+			 */
+		
+			char	*error;
+
+			switch (status) {
+			case PARSE_ERROR_OPEN_STRING:
+				error = "Unterminated string";
+				break;
+			case PARSE_ERROR_DELETED_STATEMENT:
+				error = "Misformed deleted statement";
+				break;
+			case PARSE_ERROR_LINE_CONSTANT:
+				error = "Invalid line number constant";
+				break;
+			default:
+				error = "Unknown error";
+				break;
+			}
+			
+			fprintf(stderr, "Error: %s at%s\n", error, location);
+			return NULL;
 		}
 
 		line_start = false;
 	}
 
-	/* Write the line length, and terminate the buffer. */
+	/* If all the statements in the line were deleted, then it doesn't want
+	 * to be written. We report this back by setting the first byte of the
+	 * buffer to zero: since this is defined to always be \r, it clearly
+	 * marks the line as valid but empty.
+	 *
+	 * Otherwise, write the line length and terminate the output buffer. */
 
 	if (all_deleted == true) {
 		*parse_buffer = '\0';
@@ -523,7 +577,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 		} else if ((**read >= '0' && **read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
-			parse_process_binary_constant(read, write, &extra_spaces);
+			if (!parse_process_binary_constant(read, write, &extra_spaces))
+				return PARSE_ERROR_LINE_CONSTANT;
 
 			statement_start = false;
 			line_start = false;
@@ -592,7 +647,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	if (status == PARSE_DELETED) {
 		*write = start_pos;
 		if (!clean_to_end)
-			printf("Error in removed statement\n");
+			status = PARSE_ERROR_DELETED_STATEMENT;
 	} else {
 		*real_pos += (*write - start_pos) + extra_spaces;
 	}
@@ -762,11 +817,9 @@ static bool parse_process_string(char **read, char **write, char *dump)
 	if (dump != NULL)
 		*dump = '\0';
 
-	if (!string_closed) {
-		printf("Missing string terminator");
+	if (!string_closed)
 		return false;
-	}
-	
+
 	return true;
 }
 
@@ -823,7 +876,7 @@ static void parse_process_numeric_constant(char **read, char **write)
  *			between binary and displayed constant.
  */
 
-static void parse_process_binary_constant(char **read, char **write, int *extra_spaces)
+static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces)
 {
 	char		number[256], *ptr;
 	unsigned	line = 0;
@@ -834,9 +887,9 @@ static void parse_process_binary_constant(char **read, char **write, int *extra_
 		*ptr++ = *(*read)++;
 	*ptr = '\0';
 
-	// \TODO -- This should error if not able to fit into two bytes.
-
-	line = atoi(number) & 0xffff;
+	line = atoi(number);
+	if (line > 0xffff)
+		return false;
 
 	*(*write)++ = 0x8d;
 	*(*write)++ = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
@@ -844,6 +897,8 @@ static void parse_process_binary_constant(char **read, char **write, int *extra_
 	*(*write)++ = ((line & 0x3f00) >> 8) | 0x40;
 
 	*extra_spaces += strlen(number) - 4;
+
+	return true;
 }
 
 
