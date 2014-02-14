@@ -7,7 +7,7 @@ REM 1.01 (8 September 2002)
 :
 ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
 :
-LIBRARY "BASIC:WimpLib"
+PRINT "Hello"; : LIBRARY "BASIC:WimpLib" : PRINT "World"
 :
 PROCinitialise
 :

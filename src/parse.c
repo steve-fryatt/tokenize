@@ -264,6 +264,7 @@ static void parse_process_numeric_constant(char **read, char **write);
 static void parse_process_binary_constant(char **read, char **write, int *extra_spaces);
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
+static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
 static void parse_process_to_line_end(char **read, char **write);
 
 /**
@@ -405,7 +406,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
 	bool	library_path_due = false;	/**< True if we're expecting a library path.			*/
 	bool	clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
-	bool	in_whitespace = false;		/**< True if we've just output some whitespace.			*/
 
 	int	extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
 	int	token = 0;			/**< Storage for any keyword tokens that we look up.		*/
@@ -413,21 +413,12 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	char	*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
 	while (**read != '\n' && **read != ':') {
-		if (!isspace(**read)) {
-			/* If this isn't whitepspacce, then reset any flags that
-			 * track the presence of whitespace.
-			 */
+		/* If the character isn't whitespace, then the line can't be
+		 * entirely whitespace.
+		 */
 
-			/* We're not currently in some whitespace. */
-
-			if (in_whitespace)
-				in_whitespace = false;
-
-			/* The line can't be entirely whitespace. */
-
-			if (status == PARSE_WHITESPACE)
-				status = PARSE_COMPLETE;
-		}
+		if (status == PARSE_WHITESPACE && !isspace(**read))
+			status = PARSE_COMPLETE;
 
 		/* Now start to work out what the next character might be. */
 
@@ -559,61 +550,29 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			parse_process_to_line_end(read, write);
 			clean_to_end = false;
+		} else if (isspace(**read)) {
+			/* Handle whitespace. */
+
+			parse_process_whitespace(read, write, start_pos, *real_pos + extra_spaces, options);
 		} else {
-			/* Handle everything else. */
-			if (!isspace(**read)) {
-				/* If this isn't whitespace, then it must affect the
-				 * line status in some way.
-				 */
-			
-				statement_start = false;
-				line_start = false;
-				library_path_due = false;
-				clean_to_end = false;
-			}
+			/* Handle eveything else. */
+
+			statement_start = false;
+			line_start = false;
+			library_path_due = false;
+			clean_to_end = false;
 
 			/* Whitespace or commas are the only valid things separating
-			 * keywords from following line number constants.
+			 * keywords from following line number constants, and whitespace
+			 * doesn't end up in this section.
 			 */
 
-			if (!(isspace(**read) || **read == ','))
+			if (!(**read == ','))
 				constant_due = false;
 
-			/* Output the character, if necessary. */
+			/* Copy the character to the output. */
 
-			if (**read == '\t' && options->tab_indent > 0 && !(options->crunch_whitespace || options->crunch_all_whitespace)) {
-				/* If this is a tab, and we're expanding tabs, and
-				 * we're not crunching whitespace, then output spaces
-				 * until the next tab stop.
-				 */
-
-				int insert = options->tab_indent - ((*real_pos + (*write - start_pos) + extra_spaces) % options->tab_indent);
-				if (insert == 0)
-					insert = options->tab_indent;
-
-				for (; insert > 0; insert--)
-					*(*write)++ = ' ';
-				
-				(*read)++;
-
-				in_whitespace = true;
-			} else {
-				/* If it's whitespace, and we're not stripping it,
-				 * then output a space and note that we're in some
-				 * whitespace.
-				 *
-				 * If it isn't whitespace, just copy it across.
-				 */
-
-				if (isspace(**read)) {
-					if (!(options->crunch_all_whitespace || (options->crunch_whitespace && in_whitespace)))
-						*(*write)++ = ' ';
-					in_whitespace = true;
-					(*read)++;
-				} else {
-					*(*write)++ = *(*read)++;
-				}
-			}
+			*(*write)++ = *(*read)++;
 		}
 	}
 
@@ -917,6 +876,43 @@ static void parse_process_variable(char **read, char **write)
 		*(*write)++ = *(*read)++;
 	if (**read == '%' || **read == '$')
 		*(*write)++ = *(*read)++;
+}
+
+
+/**
+ * Process white space in a line, either expanding tabs, reducing it to a single
+ * space or removing it completely depending on the configured options.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ * \param *start_pos	Pointer to the start of the write buffer.
+ * \param extra_spaces	The number of extra spaces taken up by token expansion.
+ * \param *options	Pointer to the current options block.
+ */
+
+static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options)
+{
+	bool	first_space = true;
+	int	insert;
+
+	while (isspace(**read) && **read != '\n') {
+		if (!(options->crunch_all_whitespace || (options->crunch_whitespace && !first_space))) {
+			if (**read == '\t' && !options->crunch_whitespace) {
+				insert = options->tab_indent - (((*write - start_pos) + extra_spaces) % options->tab_indent);
+				if (insert == 0)
+					insert = options->tab_indent;
+
+				for (; insert > 0; insert--)
+					*(*write)++ = ' ';
+			} else if (!options->crunch_whitespace || first_space) {
+				*(*write)++ = ' ';
+			}
+		}
+
+		(*read)++;
+
+		first_space = false;
+	}
 }
 
 
