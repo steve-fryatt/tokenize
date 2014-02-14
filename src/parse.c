@@ -332,10 +332,14 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		read++;
 	}
 
+	/* Output the line start (CR, LineNo HI, LineNo LO, Length). */
+
 	*write++ = 0x0d;
 	*write++ = (*line_number & 0xff00) >> 8;
 	*write++ = (*line_number & 0x00ff);
 	*write++ = 0;
+
+	/* Unless we're stripping all whitespace, output the line indent. */
 
 	if (!options->crunch_all_whitespace) {
 		real_pos = leading_spaces;
@@ -343,6 +347,8 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		for (; leading_spaces > 0; leading_spaces--)
 			*write++ = ' ';
 	}
+
+	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
 		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
@@ -361,7 +367,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		} else if (*read == ':') {
 			read++;
 		}
-		
+
 		line_start = false;
 	}
 
@@ -408,12 +414,22 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	while (**read != '\n' && **read != ':') {
 		if (!isspace(**read)) {
+			/* If this isn't whitepspacce, then reset any flags that
+			 * track the presence of whitespace.
+			 */
+
+			/* We're not currently in some whitespace. */
+
 			if (in_whitespace)
 				in_whitespace = false;
-	
+
+			/* The line can't be entirely whitespace. */
+
 			if (status == PARSE_WHITESPACE)
 				status = PARSE_COMPLETE;
 		}
+
+		/* Now start to work out what the next character might be. */
 
 		if (*assembler == true) {
 			/* Assembler is a special case. We just copy text across
@@ -546,27 +562,49 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else {
 			/* Handle everything else. */
 			if (!isspace(**read)) {
+				/* If this isn't whitespace, then it must affect the
+				 * line status in some way.
+				 */
+			
 				statement_start = false;
 				line_start = false;
 				library_path_due = false;
 				clean_to_end = false;
 			}
 
+			/* Whitespace or commas are the only valid things separating
+			 * keywords from following line number constants.
+			 */
+
 			if (!(isspace(**read) || **read == ','))
 				constant_due = false;
 
+			/* Output the character, if necessary. */
+
 			if (**read == '\t' && options->tab_indent > 0 && !(options->crunch_whitespace || options->crunch_all_whitespace)) {
+				/* If this is a tab, and we're expanding tabs, and
+				 * we're not crunching whitespace, then output spaces
+				 * until the next tab stop.
+				 */
+
 				int insert = options->tab_indent - ((*real_pos + (*write - start_pos) + extra_spaces) % options->tab_indent);
 				if (insert == 0)
 					insert = options->tab_indent;
-				
+
 				for (; insert > 0; insert--)
 					*(*write)++ = ' ';
 				
 				(*read)++;
-				
+
 				in_whitespace = true;
 			} else {
+				/* If it's whitespace, and we're not stripping it,
+				 * then output a space and note that we're in some
+				 * whitespace.
+				 *
+				 * If it isn't whitespace, just copy it across.
+				 */
+
 				if (isspace(**read)) {
 					if (!(options->crunch_all_whitespace || (options->crunch_whitespace && in_whitespace)))
 						*(*write)++ = ' ';
