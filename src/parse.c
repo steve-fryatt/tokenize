@@ -322,10 +322,12 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			return NULL;
 		} else if (read_number > *line_number) {
 			*line_number = read_number;
-		} else if (read_number < *line_number) {
+		} else if (read_number <= *line_number) {
 			fprintf(stderr, "Error: Line number %u out of sequence at%s\n", read_number, location);
 			return NULL;
 		}
+	} else {
+		*line_number += options->line_increment;
 	}
 
 	/* Again, trim any whitespace that followed the line number. */

@@ -215,7 +215,6 @@ bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 		return false;
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
-		*line_number += options->line_increment;
 		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '\?\?\?'", ++input_line);
 		
 		tokenised = parse_process_line(line, options, &assembler, line_number, location);
