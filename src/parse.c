@@ -574,7 +574,10 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				parse_process_to_line_end(read, write);
 				break;
 			case KWD_LIBRARY:
-				library_path_due = true;
+				if (statement_start)
+					library_path_due = true;
+				else
+					fprintf(stderr, "Warning: Unisolated LIBRARY not linked%s\n", location);
 				break;
 			}
 
