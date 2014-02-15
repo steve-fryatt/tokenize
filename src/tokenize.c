@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 	parse_options.crunch_body_rems = false;
 	parse_options.crunch_rems = false;
 	parse_options.crunch_empty = false;
+	parse_options.crunch_indent = false;
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
@@ -81,6 +82,9 @@ int main(int argc, char *argv[])
 					switch (*mode++) {
 					case 'e':
 						parse_options.crunch_empty = true;
+						break;
+					case 'i':
+						parse_options.crunch_indent = true;
 						break;
 					case 'R':
 						parse_options.crunch_rems = true;

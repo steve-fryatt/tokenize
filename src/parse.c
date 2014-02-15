@@ -351,7 +351,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	/* Unless we're stripping all whitespace, output the line indent. */
 
-	if (!options->crunch_all_whitespace) {
+	if (!options->crunch_indent) {
 		real_pos = leading_spaces;
 
 		for (; leading_spaces > 0; leading_spaces--)

@@ -208,6 +208,7 @@ struct parse_options {
 	bool		crunch_body_rems;	/**< True to remove all body REM statements.			*/
 	bool		crunch_rems;		/**< True to remove all REM statements.				*/
 	bool		crunch_empty;		/**< True to remove all empty statements.			*/
+	bool		crunch_indent;		/**< True to remove all leading indent spaces.			*/
 	bool		crunch_whitespace;	/**< True to reduce contiguous whitespace to a single space.	*/
 	bool		crunch_all_whitespace;	/**< True to remove all whitespace.				*/
 };
