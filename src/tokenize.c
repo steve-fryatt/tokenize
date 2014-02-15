@@ -51,10 +51,13 @@ bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 int main(int argc, char *argv[])
 {
 	bool			param_error = false;
+	bool			output_help = false;
 	struct args_option	*options;
 	struct args_data	*option_data;
 	char *output_file	= NULL;
 	struct parse_options	parse_options;
+
+	/* Default processing options. */
 
 	parse_options.tab_indent = 8;
 	parse_options.line_increment = 10;
@@ -67,11 +70,9 @@ int main(int argc, char *argv[])
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S");
-	if (options == NULL) {
-		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
-		return 1;
-	}
+	/* Decode the command line options. */
+
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S,help/S");
 
 	while (options != NULL) {
 		if (strcmp(options->name, "crunch") == 0) {
@@ -101,6 +102,9 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+		} else if (strcmp(options->name, "help") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				output_help = true;
 		} else if (strcmp(options->name, "increment") == 0) {
 			if (options->data != NULL)
 				parse_options.line_increment = options->data->value.integer;
@@ -147,15 +151,37 @@ int main(int argc, char *argv[])
 		options = options->next;
 	}
 
-	if (param_error) {
-		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
-		return 1;
-	}
+	/* Generate any necessary verbose or help output. If options is NULL or
+	 * param_error is true, then we need to give some usage guidance and
+	 * exit with an error.
+	 */
 
-	if (parse_options.verbose_output) {
+	if (options == NULL || param_error || output_help || parse_options.verbose_output) {
 		printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 		printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 	}
+	
+	if (options == NULL || param_error || output_help) {
+		printf("ARM BASIC V Tokenizer -- Usage:\n");
+		printf("tokenize <infile> [<infile> ...] -out <outfile> [<options>]\n\n");
+
+		printf(" -crunch [EIRW]      Control application of output CRUNCHing.\n");
+		printf("                      E|e - Remove empty statements.\n");
+		printf("                      I|i - Remove opening indents.\n");
+		printf("                      R|r - Remove all|non-opening comments.\n");
+		printf("                      W|w - Remove|reduce in-line whitespace.\n");
+		printf(" -help               Produce this help information.\n");
+		printf(" -increment <n>      Set the AUTO line number increment to <n>.\n");
+		printf(" -link               Link files from LIBRARY statements.\n");
+		printf(" -out <file>         Write tokenised basic to file <out>.\n");
+		printf(" -path <name>:<path> Set path variable <name> to <path>.\n"); 
+		printf(" -tab <n>            Set the tab column with to <n> spaces.\n");
+		printf(" -verbose            Generate verbose process information.\n");
+	
+		return (output_help) ? 0 : 1;
+	}
+
+	/* Run the tokenisation. */
 
 	if (!tokenize_run_job(output_file, &parse_options))
 		return 1;
