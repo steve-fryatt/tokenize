@@ -53,7 +53,7 @@ Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH
 
 where one or more source files are tokenized into a single output file.
 
-It is possible to add the <command>-verbose</command> parameter switch, in which case <cite>Tokenize</cite> will generate more detailed information about what it is doing.
+It is possible to add the <param>-verbose</param> parameter switch, in which case <cite>Tokenize</cite> will generate more detailed information about what it is doing.
 
 
 <subhead title="Source Files">
@@ -85,7 +85,7 @@ All BASIC programs must have line numbers, but if they are not included in its s
 
 A line number is considered to be any digits at the start of a line &ndash; otherwise, lines should start with non-numeric characters. The whitespace around line numbers is optional; if a number is present, the space before it will be ignored for the purposes of indenting what follows.
 
-If line numbers are present in the source files, then they will be used in the output. If they are not present, then <cite>Tokenize</cite> will number the lines it creates automatically and increment using the value given by the <command>-increment</command> parameter &ndash; this defaults to 10 if not specified.
+If line numbers are present in the source files, then they will be used in the output. If they are not present, then <cite>Tokenize</cite> will number the lines it creates automatically and increment using the value given by the <param>-increment</param> parameter &ndash; this defaults to 10 if not specified.
 
 If line numbers are given, they must be sequential: duplicate numbers are not allowed, and lines can not be numbered backwards. It is possible to mix numbered and un-numbered lines, in which case <cite>Tokenize</cite> will switch between the two numbering methods: numbers must still be sequential, and if the numbered lines break the automatic sequence an error will be given. Thus
 
@@ -95,7 +95,7 @@ If line numbers are given, they must be sequential: duplicate numbers are not al
    NEXT I%
 </codeblock>
 
-would be valid using the default value for <command>-increment</command> and would result in lines 10, 15 and 25 being generated. However
+would be valid using the default value for <param>-increment</param> and would result in lines 10, 15 and 25 being generated. However
 
 <codeblock>
    FOR I% = 1 TO 10
@@ -103,10 +103,34 @@ would be valid using the default value for <command>-increment</command> and wou
    NEXT I%
 </codeblock>
 
-would not be valid, and would give the error &ldquo;Line number 5 out of sequence at line 2 of &lsquo;example file&rsquo;&rdquo; (because it would try to create the sequence 10, 5 and 15).
+would not be valid, and would give the error &ldquo;Line number 5 out of sequence at line 2 of &lsquo;example file&rsquo;&rdquo; (because this would be trying to create the sequence 10, 5 and 15 using the default settings of <param>-increment</param>).
 
 
 <subhead title="Linking and Libraries">
+
+Used with a single source file, <cite>Tokenize</cite> will take the file and convert it into a single tokenized BASIC program:
+
+<command>tokenize &lt;source&nbsp;file&gt; -out &lt;output&nbsp;file&gt;</command>
+
+If more than one source file is specified, then the files will be concatenated in the order that they are included in the parameters:
+
+<command>tokenize &lt;source&nbsp;1&gt; &lt;source&nbsp;2&gt; &lt;source&nbsp;3&gt; -out &lt;output&nbsp;file&gt;</command>
+
+would result in the files being linked in the order
+
+<codeblock>
+  REM File 1
+  REM File 2
+  REM File 3
+</codeblock>
+
+In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves. Thus if the statement <code>LIBRARY &quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that their are found in the source.
+
+All <code>LIBRARY</code> commands will be processed, including any found within linked source files. The filenames given to <code>LIBRARY</code> must be string constants: if a variable is encountered (eg. <code>LIBRARY variable$</code>) then the statement will be left in the tokenized output and a warning will be given. Filenames found in <code>LIBRARY<code> commands are assumed to be in &lsquo;local&rsquo; format, including being treated as having relative location if applicable.
+
+The only concession to RISC&nbsp;OS usage is that it is possible to specify &lsquo;path variables&rsquo; so that statements such as <code>LIBRARY &quot;BASIC:Library&quot;</code> can be used. On RISC&nbsp;OS, such a filename would resolve to the file <file>Library</file> somewhere on <code>&lt;BASIC$Path&gt;</code>. <cite>Tokenize</cite> allows paths to be specified using the <param>-path</param> parameter: <command>-param BASIC:libs/</command> would mean that <code>BASIC:</code> would expand to <code>libs/</code> and therefore result in <code>LIBRARY &quot;libs/Library&quot;</code> for the example here. As with RISC&nbsp;OS path variables, paths must end with a directory separator in the local format.
+
+More than one <param>-path</param> parameter can be specified on the command line if required.
 
 
 <subhead title="Indentation and Crunching">
@@ -114,7 +138,11 @@ would not be valid, and would give the error &ldquo;Line number 5 out of sequenc
 </chapter>
 
 
-<chapter title="Errors" file="Errors">
+<chapter title="Errors and Warnings" file="Errors">
+
+
+Variable LIBRARY not linked.
+
 
 </chapter>
 
