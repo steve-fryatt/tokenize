@@ -78,6 +78,8 @@ NEXT I%
 
 In the latter case, the line numbers will be applied automatically as described in the following section.
 
+Keyword abbreviations are fully supported, using the rules defined in the <cite>BASIC Reference Manual</cite>. Thus <code>PRINT</code> and <code>P.</code> would both covert into the same token, while <code>OR</code> and <code>OR.</code> would not. For clarity, the use of abbreviations in source code is discouraged.
+
 
 <subhead title="Line Numbers">
 
@@ -119,9 +121,9 @@ If more than one source file is specified, then the files will be concatenated i
 would result in the files being linked in the order
 
 <codeblock>
-  REM File 1
-  REM File 2
-  REM File 3
+REM File 1
+REM File 2
+REM File 3
 </codeblock>
 
 In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves. Thus if the statement <code>LIBRARY &quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that their are found in the source.
@@ -134,6 +136,37 @@ More than one <param>-path</param> parameter can be specified on the command lin
 
 
 <subhead title="Indentation and Crunching">
+
+<cite>Tokenize</cite> can adjust the indentation and spacing of the BASIC source when generating tokenized output.
+
+By default, any whitespace before a leading line number is ignored. Whitespace folloiwing the line number is retained, and used in the output. Thus both
+
+<codeblock>
+REM >Example
+REM
+:
+FOR I% = 1 TO 10
+  PRINT "Hello World!"
+NEXT I%
+</codeblock>
+
+and
+
+<codeblock>
+ 10REM >Example
+ 20REM
+ 30:
+100FOR I% = 1 TO 10
+110  PRINT "Hello World!"
+120NEXT I%
+</codeblock>
+
+would both result in the same indentation. If a space were left between the line number and the rest of the statement in the second example, then this would be copied to the resulting file.
+
+If tabs are used, then these will be expanded into spaces so that the align with the next tab stop if all the preceeding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
+
+The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file.
+
 
 </chapter>
 
