@@ -37,7 +37,7 @@ The source for <cite>MenuGen</cite> can be found alongside this binary download,
 
 <cite>Tokenize</cite> is a tool for converting ASCII text files into tokenized BASIC (of the ARM&nbsp;BASIC&nbsp;V variety) at the command line. It is written in C, and can be compiled to run on platforms other than RISC&nbsp;OS.
 
-In addition to tokenizing files, <cite>Tokenize</cite> can link multiple library files into a single output &ndash; both by passing multiple source files on the command line and by processing (and removing) <code>LIBRARY</code> statements in the source.
+In addition to tokenizing files, <cite>Tokenize</cite> can link multiple library files into a single output &ndash; both by passing multiple source files on the command line and by processing (and removing) <code>LIBRARY</code> statements found in the source.
 
 Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output.
 
@@ -47,22 +47,24 @@ Be aware that <cite>Tokenize</cite> is <strong>not</strong> a BASIC syntax check
 
 
 
-<chapter title="Commad Line Usage" file="Use">
+<chapter title="Command Line Usage" file="Use">
 
 <cite>Tokenize</cite> is a command line tool, and should placed in your library or on your path as appropriate. Once installed, it can be used in its most basic form as
 
-<command>tokenize &lt;source&nbsp;file&nbsp;1&gt; [&lt;source&nbsp;file&nbsp;2&gt; ...] -out &lt;output&gt;</command>
+<command>tokenize &lt;source&nbsp;file&nbsp;1&gt; [&lt;source&nbsp;file&nbsp;2&gt; ...] -out &lt;output&gt; [&lt;options&gt;]</command>
 
 where one or more source files are tokenized into a single output file.
 
 It is possible to add the <param>-verbose</param> parameter switch, in which case <cite>Tokenize</cite> will generate more detailed information about what it is doing.
 
+For more information about the options available, use <command>tokenize -help</command>.
+
 
 <subhead title="Source Files">
 
-The source files used by <cite>Tokenize</cite> are plain ASCII text: as saved from BASIC using the <code>TEXTSAVE<code> command, or by loading a BASIC file into a text editor and saving it as text.
+The source files used by <cite>Tokenize</cite> are plain ASCII text: as saved from BASIC using the <code>TEXTSAVE</code> command, or by loading a BASIC file into a text editor and saving it as text.
 
-The same requirements in terms of spacing and layout are placed on the files as would be applied by BASIC&rsquo;s own tokenizer. The only difference is that &ndash; as with editing BASIC in most text editors on RISC&nbsp;OS &ndash; line numbers are optional. Thus a file could read
+The same requirements in terms of spacing and layout are placed on the files as would be applied by BASIC&rsquo;s own tokenizer. The only difference is that &ndash; as with loading files with <code>TEXTLOAD</code> and editing BASIC in most text editors on RISC&nbsp;OS &ndash; line numbers are optional. Thus a file could read
 
 <codeblock>
  80 FOR I% = 1 TO 10
@@ -85,7 +87,7 @@ Keyword abbreviations are fully supported, using the rules defined in the <cite>
 
 <subhead title="Line Numbers">
 
-All BASIC programs must have line numbers, but if they are not included in its source files <cite>Tokenize</cite> will add them automatically.
+All BASIC programs must have line numbers, but if they are not included in its source files then <cite>Tokenize</cite> will add them automatically.
 
 A line number is considered to be any digits at the start of a line &ndash; otherwise, lines should start with non-numeric characters. The whitespace around line numbers is optional; if a number is present, the space before it will be ignored for the purposes of indenting what follows.
 
@@ -94,17 +96,17 @@ If line numbers are present in the source files, then they will be used in the o
 If line numbers are given, they must be sequential: duplicate numbers are not allowed, and lines can not be numbered backwards. It is possible to mix numbered and un-numbered lines, in which case <cite>Tokenize</cite> will switch between the two numbering methods: numbers must still be sequential, and if the numbered lines break the automatic sequence an error will be given. Thus
 
 <codeblock>
-   FOR I% = 1 TO 10
+   FOR i% = 1 TO 10
 15   PRINT "Hello World!"
-   NEXT I%
+   NEXT i%
 </codeblock>
 
 would be valid using the default value for <param>-increment</param> and would result in lines 10, 15 and 25 being generated. However
 
 <codeblock>
-   FOR I% = 1 TO 10
+   FOR i% = 1 TO 10
  5   PRINT "Hello World!"
-   NEXT I%
+   NEXT i%
 </codeblock>
 
 would not be valid, and would give the error &ldquo;Line number 5 out of sequence at line 2 of &lsquo;example file&rsquo;&rdquo; (because this would be trying to create the sequence 10, 5 and 15 using the default settings of <param>-increment</param>).
@@ -130,7 +132,7 @@ REM File 3
 
 In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves. Thus if the statement <code>LIBRARY &quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that their are found in the source.
 
-<code>LIBRARY</code> commands must appear alone in a statement in order to be considered for linking. In other words, these two examples would be OK
+<code>LIBRARY</code> commands must appear alone in a statement in order to be considered for linking. In other words, these two examples would be linked
 
 <codeblock>
 LIBRARY "WimpLib"
@@ -143,9 +145,9 @@ but on the other hand this example
 IF foo% THEN LIBRARY "BarLib"
 </codeblock>
 
-would not, because the <code>LIBRARY</code> statement is not able to be processed in isolation from the rest of the code.
+would not, because the <code>LIBRARY</code> statement is not able to be processed in isolation from the rest of the code. If a <code>LIBRARY</code> command is skipped in this way, a warning will be given.
 
-All <code>LIBRARY</code> commands will bb considered for linking, including any found within linked source files. The filenames given to <code>LIBRARY</code> must be string constants: if a variable is encountered (eg. <code>LIBRARY variable$</code>) then the statement will be left in the tokenized output and a warning will be given. Filenames found in <code>LIBRARY<code> commands are assumed to be in &lsquo;local&rsquo; format, including being treated as having relative location if applicable.
+All <code>LIBRARY</code> commands will be considered for linking, including any found within linked source files. The filenames given to <code>LIBRARY</code> must be string constants: if a variable is encountered (eg. <code>LIBRARY variable$</code>) then the statement will be left in the tokenized output and a warning will be given. Filenames found in <code>LIBRARY</code> commands are assumed to be in &lsquo;local&rsquo; format, including being treated as having relative location if applicable.
 
 The only concession to RISC&nbsp;OS usage is that it is possible to specify &lsquo;path variables&rsquo; so that statements such as <code>LIBRARY &quot;BASIC:Library&quot;</code> can be used. On RISC&nbsp;OS, such a filename would resolve to the file <file>Library</file> somewhere on <code>&lt;BASIC$Path&gt;</code>. <cite>Tokenize</cite> allows paths to be specified using the <param>-path</param> parameter: <command>-param BASIC:libs/</command> would mean that <code>BASIC:</code> would expand to <code>libs/</code> and therefore result in <code>LIBRARY &quot;libs/Library&quot;</code> for the example here. As with RISC&nbsp;OS path variables, paths must end with a directory separator in the local format.
 
@@ -156,7 +158,7 @@ More than one <param>-path</param> parameter can be specified on the command lin
 
 <cite>Tokenize</cite> can adjust the indentation and spacing of the BASIC source when generating tokenized output.
 
-By default, any whitespace before a leading line number is ignored. Whitespace folloiwing the line number is retained, and used in the output. Thus both
+By default, any whitespace before a leading line number is ignored. Whitespace following the line number is retained, and used in the output. Thus both
 
 <codeblock>
 REM >Example
@@ -180,9 +182,9 @@ and
 
 would both result in the same indentation. If a space were left between the line number and the rest of the statement in the second example, then this would be copied to the resulting file.
 
-If tabs are used, then these will be expanded into spaces so that the align with the next tab stop if all the preceeding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
+If tabs are used, then these will be expanded into spaces so as to align with the next tab stop if all the preceding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
 
-The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file. In use it operates very much like BASIC&rsquo;s <code>CRUNCH<code> command. It takes a series of letters after it, which indicate what crunching to apply &ndash; in some instances, these are case sensitive.
+The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file. In use it operates very much like BASIC&rsquo;s <code>CRUNCH</code> command. It takes a series of letters after it, which indicate what crunching to apply &ndash; in some instances, these are case sensitive.
 
 <definition target="E">
 Setting <param>E</param> will cause empty statements to be removed from the file, along with any empty lines (whether already there or created by removing empty statements).
@@ -193,7 +195,7 @@ The <param>I</param> option will cause all start-of-line indentation to be remov
 </definition>
 
 <definition target="R">
-The <param>r</param> and <param>R</param> options allow comments to be stripped from the source code; if used in conjunction with <param>E</param> then any lines which end up being emty will get removed. An upper case <param>R</param> will strip all comments; a lower case <param>r</param> will only strip comments after the first contiguous block of lines containing only <code>REM</code> statements at the head of the first file. In other words
+The <param>r</param> and <param>R</param> options allow comments to be stripped from the source code; if used in conjunction with <param>E</param> then any lines which end up being empty will get removed. An upper case <param>R</param> will strip all comments; a lower case <param>r</param> will only strip comments after the first contiguous block of lines containing only <code>REM</code> statements at the head of the first file. In other words
 
 <codeblock>
 REM >Example
@@ -233,7 +235,7 @@ The <param>w</param> and <param>W</param> options allow whitespace to be removed
 
 <chapter title="Errors and Warnings" file="Errors">
 
-There are a number of error and warning messages that <cite>Tokenize<cite> can generate while running. These can indicate problems with the source BASIC code, or with the availability of files on disc, and are detailed here.
+There are a number of error and warning messages that <cite>Tokenize</cite> can generate while running. These can indicate problems with the source BASIC code, or with the availability of files on disc, and are detailed here.
 
 In addition, adding the <param>-verbose</param> flag to the command line will cause <cite>Tokenize</cite> to produce additional information about what it is doing during linking and tokenizing.
 
@@ -242,7 +244,7 @@ In addition, adding the <param>-verbose</param> flag to the command line will ca
 Errors are generated during the linking and tokenization process when a problem occurs which can not be resolved. The process will be halted, and must be re-started once the error has been resolved.
 
 <definition target="Failed to open source file '&lt;file&gt;'">
-A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive.
+A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive &ndash; references that work on RISC&nbsp;OS&rsquo;s case-insensitive Filecore systems might fail on other platform&rsquo;s case-sensitive filesystems.
 </definition>
 
 <definition target="Invalid line number constant">
@@ -281,11 +283,20 @@ If <cite>Tokenize</cite> needs to remove a statement &ndash; such as a linked in
 LIBRARY &quot;LibFile&quot; ELSE
 </codeblock>
 
-would cause this error. Note that such code would almost certainly raise a Syntax Error from BASIC itself, anyway.
+would cause this error. Note that code which would raise this specific error &ndash; as opposed to warnings relating to the processing of <code>LIBRARY</code> commands &ndash; would almost certainly raise a Syntax Error from BASIC itself, anyway.
 </definition>
 
+<definition target="Unterminated string">
+String constants must be enclosed by double quotes (&quot;...&quot;), and a pair of double quotes (&quot;&quot;) together in a string is treated as a single double quote. <cite>Tokenize</cite> will raise an error if it reaches the end of a line in a source file whilst thinking that it is still inside a string.
+</definition>
+
+
+<subhead title="Warnings">
+
+Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well not prevent the tokenized program from working.
+
 <definition target="Unisolated LIBRARY not linked">
-In order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite> needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
+If the <param>-link</param> option is in force then in order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite>i needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
 
 <codeblock>
 IF condition% = TRUE THEN
@@ -296,17 +307,8 @@ ENDIF
 would be linked, but might have some unexpected consequences.
 </definition>
 
-<definition target="Unterminated string">
-String constants must be enclosed by double quotes (&quot;...&quot;), and a pair of double quotes (&quot;&quot;) together in a string is treated as a single double quote. <cite>Tokenize</cite> will raise an error if it reaches the end of a line in a source file whilst thinking that it is still inside a string.
-</definition>
-
-
-<subhead title="Warnings">
-
-Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well prevent the tokenized program from working.
-
 <definition target="Variable LIBRARY not linked">
-A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize can not determine the name of the file and will therefore leave the statement in situ.
+A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize can not determine the name of the file and will therefore leave the statement in-situ.
 </definition>
 
 
@@ -319,9 +321,9 @@ A <code>LIBRARY</code> statement with a variable following it was encountered wh
 Here is a list of the versions of <cite>Tokenize</cite>, along with all the changes made.
 
 
-<subhead title="0.01 (17 February 2001)">
+<subhead title="Test Build">
 
-Initial developments.
+Initial release for testing and feedback.
 
 
 </chapter>
