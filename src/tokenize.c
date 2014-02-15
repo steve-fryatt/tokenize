@@ -45,8 +45,6 @@
 #define MAX_INPUT_LINE_LENGTH 1024
 #define MAX_LOCATION_TEXT 256
 
-
-
 bool tokenize_run_job(char *output_file, struct parse_options *options);
 bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options);
 
@@ -61,6 +59,7 @@ int main(int argc, char *argv[])
 	parse_options.tab_indent = 8;
 	parse_options.line_increment = 10;
 	parse_options.link_libraries = false;
+	parse_options.verbose_output = false;
 	parse_options.crunch_body_rems = false;
 	parse_options.crunch_rems = false;
 	parse_options.crunch_empty = false;
@@ -72,7 +71,7 @@ int main(int argc, char *argv[])
 	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S");
 	if (options == NULL) {
 		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
@@ -107,6 +106,9 @@ int main(int argc, char *argv[])
 		} else if (strcmp(options->name, "link") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				parse_options.link_libraries = true;
+		} else if (strcmp(options->name, "verbose") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				parse_options.verbose_output = true;
 		} else if (strcmp(options->name, "source") == 0) {
 			if (options->data != NULL) {
 				option_data = options->data;
@@ -175,7 +177,8 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 	if (output_file == NULL || options == NULL)
 		return false;
 
-	printf("Open for file '%s'\n", output_file);
+	if (options->verbose_output)
+		printf("Creating tokenized file '%s'\n", output_file);
 
 	out = fopen(output_file, "w");
 	if (out == NULL)
@@ -214,10 +217,15 @@ bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 	if (in == NULL || out == NULL || line_number == NULL || options == NULL)
 		return false;
 
+	file = library_get_filename();
+	if (file == NULL)
+		file = "unknown file";
+	
+	snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, file);
+	if (options->verbose_output)
+		printf("Processing source file '%s'\n", file);
+
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
-		file = library_get_filename();
-		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, (file != NULL) ? file : "unknown file");
-		
 		tokenised = parse_process_line(line, options, &assembler, line_number, location);
 		if (tokenised != NULL) {
 			/* The line tokeniser requests a line be deleted (ie. not

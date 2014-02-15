@@ -106,8 +106,6 @@ void library_add_path(char *name, char *path)
 	if (new == NULL)
 		return;
 
-	printf("Adding path '%s' to '%s'\n", name, path);
-
 	new->name = strdup(name);
 	new->path = strdup(path);
 
@@ -128,8 +126,6 @@ void library_add_file(char *file)
 	struct library_path	*paths = library_path_head;
 	struct library_file	*new = NULL;
 	char			*copy = NULL, *tail = NULL, *temp;
-
-	printf("Adding file: '%s'\n", file);
 
 	copy = strdup(file);
 	if (copy == NULL)
@@ -182,8 +178,6 @@ void library_add_file(char *file)
  * Get the next file to be processed from the library list, as a complete
  * filename ready to be used by the file load routine.
  *
- * \param *buffer	Pointer to a buffer to take the filename.
- * \param len		The length of the supplied buffer.
  * \return		True if a filename was returned; else false.
  */
 
@@ -193,9 +187,12 @@ FILE *library_get_file(void)
 	FILE			*file = NULL;
 
 	while (library_file_head != NULL && file == NULL) {
-		printf("Trying to open library file '%s'\n", library_file_head->file);
-
 		file = fopen(library_file_head->file, "r");
+
+		if (file == NULL) {
+			fprintf(stderr, "Error: failed to open file '%s'\n", library_file_head->file);
+			return NULL;
+		}
 
 		strncpy(library_filename_buffer, library_file_head->file, LIBRARY_MAX_FILENAME);
 		library_filename = library_filename_buffer;

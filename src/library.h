@@ -67,8 +67,6 @@ void library_add_file(char *file);
  * Get the next file to be processed from the library list, as a complete
  * filename ready to be used by the file load routine.
  *
- * \param *buffer	Pointer to a buffer to take the filename.
- * \param len		The length of the supplied buffer.
  * \return		True if a filename was returned; else false.
  */
 

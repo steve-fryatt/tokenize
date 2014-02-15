@@ -509,6 +509,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				library_add_file(library_path);
 				clean_to_end = true;
 				status = PARSE_DELETED;
+				if (options->verbose_output)
+					printf("Queue 'LIBRARY \"%s\"' for linking\n", library_path);
 			}
 
 			statement_start = false;

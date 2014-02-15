@@ -203,6 +203,8 @@ struct parse_options {
 
 	bool		link_libraries;		/**< True to link LIBRARY files; False to ignore.		*/
 
+	bool		verbose_output;		/**< True to produce verbose output; false to be silent.	*/
+
 	bool		crunch_body_rems;	/**< True to remove all body REM statements.			*/
 	bool		crunch_rems;		/**< True to remove all REM statements.				*/
 	bool		crunch_empty;		/**< True to remove all empty statements.			*/
