@@ -257,7 +257,7 @@ static char parse_buffer[MAX_TOKENISED_LINE];
 static char library_path[MAX_TOKENISED_LINE];
 
 
-static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location);
 static int parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
@@ -361,7 +361,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
-		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
+		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start, location);
 
 		if (status == PARSE_DELETED) {
 			/* If the statement was deleted, remove any following separator. */
@@ -451,10 +451,11 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
  * \param *options	The number of spaces used for a tab (0 to disable).
  * \param *assembler	Pointer to a variable indicating if we're in an assember block.
  * \param line_start	True if this is the first statement on a line.
+ * \param *location	Pointer to a string giving the file location.
  * \return		The status of the parsed statement.
  */
 
-static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start)
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location)
 {
 	enum parse_status	status = PARSE_WHITESPACE;
 
@@ -510,7 +511,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				clean_to_end = true;
 				status = PARSE_DELETED;
 				if (options->verbose_output)
-					printf("Queue 'LIBRARY \"%s\"' for linking\n", library_path);
+					printf("Queue 'LIBRARY \"%s\"' for linking%s\n", library_path, location);
 			}
 
 			statement_start = false;
@@ -591,6 +592,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z')) {
 			/* Handle variable names */
 			parse_process_variable(read, write);
+
+			if (library_path_due)
+				fprintf(stderr, "Warning: Variable LIBRARY not linked%s\n", location);
 
 			statement_start = false;
 			line_start = false;
