@@ -593,7 +593,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			/* Handle variable names */
 			parse_process_variable(read, write);
 
-			if (library_path_due)
+			if (library_path_due && options->link_libraries)
 				fprintf(stderr, "Warning: Variable LIBRARY not linked%s\n", location);
 
 			statement_start = false;
