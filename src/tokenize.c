@@ -220,12 +220,13 @@ bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct pars
 	file = library_get_filename();
 	if (file == NULL)
 		file = "unknown file";
-	
-	snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, file);
+
 	if (options->verbose_output)
 		printf("Processing source file '%s'\n", file);
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
+		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, file);
+
 		tokenised = parse_process_line(line, options, &assembler, line_number, location);
 		if (tokenised != NULL) {
 			/* The line tokeniser requests a line be deleted (ie. not
