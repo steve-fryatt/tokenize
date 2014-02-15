@@ -286,6 +286,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	char			*read = line, *write = parse_buffer;
 	unsigned		read_number = 0;
 	int			leading_spaces = 0;
+	enum parse_status	status = PARSE_COMPLETE;
 
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
@@ -361,7 +362,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
-		enum parse_status status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start, location);
+		status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start, location);
 
 		if (status == PARSE_DELETED) {
 			/* If the statement was deleted, remove any following separator. */
@@ -379,10 +380,14 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 				all_deleted = false;
 
 			/* If there's a separator following, copy it into the
-			 * output buffer.
+			 * output buffer unless we're removing empty statements
+			 * and this is the end of the line. Any trailing colons
+			 * with spaces after them will be deleted when the spaces
+			 * get crunched out as an empty statement -- if there are
+			 * no spaces, this won't happen.
 			 */
 
-			if (*read == ':') {
+			if (*read == ':' && (!options->crunch_empty || *(read + 1) != '\n')) {
 				*write++ = *read++;
 				real_pos++;
 			}
@@ -421,6 +426,15 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		}
 
 		line_start = false;
+	}
+
+	/* If the last statement was deleted, clean back to remove any trailing
+	 * whitespace and colons that could have been orphaned.
+	 */
+
+	if (all_deleted == false && status == PARSE_DELETED) {
+		while (((write - parse_buffer) > 4) && (*(write - 1) == ' ' || *(write - 1) == ':'))
+			write--;
 	}
 
 	/* If all the statements in the line were deleted, then it doesn't want
