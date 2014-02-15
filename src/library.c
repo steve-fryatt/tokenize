@@ -190,7 +190,7 @@ FILE *library_get_file(void)
 		file = fopen(library_file_head->file, "r");
 
 		if (file == NULL) {
-			fprintf(stderr, "Error: failed to open file '%s'\n", library_file_head->file);
+			fprintf(stderr, "Error: Failed to open source file '%s'\n", library_file_head->file);
 			return NULL;
 		}
 

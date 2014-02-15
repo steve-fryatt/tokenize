@@ -41,6 +41,8 @@ In addition to tokenizing files, <cite>Tokenize</cite> can link multiple library
 
 Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output.
 
+Be aware that <cite>Tokenize</cite> is <strong>not</strong> a BASIC syntax checker. While it will check some aspects of syntax that it requires to do its job, it will not verify that a program is completely syntactically correct and that it will load into the BASIC Interpreter and execute as intended.
+
 </chapter>
 
 
@@ -128,7 +130,22 @@ REM File 3
 
 In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves. Thus if the statement <code>LIBRARY &quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that their are found in the source.
 
-All <code>LIBRARY</code> commands will be processed, including any found within linked source files. The filenames given to <code>LIBRARY</code> must be string constants: if a variable is encountered (eg. <code>LIBRARY variable$</code>) then the statement will be left in the tokenized output and a warning will be given. Filenames found in <code>LIBRARY<code> commands are assumed to be in &lsquo;local&rsquo; format, including being treated as having relative location if applicable.
+<code>LIBRARY</code> commands must appear alone in a statement in order to be considered for linking. In other words, these two examples would be OK
+
+<codeblock>
+LIBRARY "WimpLib"
+PROCfoo : LIBRARY "BarLib" : REM This is OK
+</codeblock>
+
+but on the other hand this example
+
+<codeblock>
+IF foo% THEN LIBRARY "BarLib"
+</codeblock>
+
+would not, because the <code>LIBRARY</code> statement is not able to be processed in isolation from the rest of the code.
+
+All <code>LIBRARY</code> commands will bb considered for linking, including any found within linked source files. The filenames given to <code>LIBRARY</code> must be string constants: if a variable is encountered (eg. <code>LIBRARY variable$</code>) then the statement will be left in the tokenized output and a warning will be given. Filenames found in <code>LIBRARY<code> commands are assumed to be in &lsquo;local&rsquo; format, including being treated as having relative location if applicable.
 
 The only concession to RISC&nbsp;OS usage is that it is possible to specify &lsquo;path variables&rsquo; so that statements such as <code>LIBRARY &quot;BASIC:Library&quot;</code> can be used. On RISC&nbsp;OS, such a filename would resolve to the file <file>Library</file> somewhere on <code>&lt;BASIC$Path&gt;</code>. <cite>Tokenize</cite> allows paths to be specified using the <param>-path</param> parameter: <command>-param BASIC:libs/</command> would mean that <code>BASIC:</code> would expand to <code>libs/</code> and therefore result in <code>LIBRARY &quot;libs/Library&quot;</code> for the example here. As with RISC&nbsp;OS path variables, paths must end with a directory separator in the local format.
 
@@ -145,9 +162,9 @@ By default, any whitespace before a leading line number is ignored. Whitespace f
 REM >Example
 REM
 :
-FOR I% = 1 TO 10
+FOR i% = 1 TO 10
   PRINT "Hello World!"
-NEXT I%
+NEXT i%
 </codeblock>
 
 and
@@ -156,25 +173,141 @@ and
  10REM >Example
  20REM
  30:
-100FOR I% = 1 TO 10
+100FOR i% = 1 TO 10
 110  PRINT "Hello World!"
-120NEXT I%
+120NEXT i%
 </codeblock>
 
 would both result in the same indentation. If a space were left between the line number and the rest of the statement in the second example, then this would be copied to the resulting file.
 
 If tabs are used, then these will be expanded into spaces so that the align with the next tab stop if all the preceeding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
 
-The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file.
+The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file. In use it operates very much like BASIC&rsquo;s <code>CRUNCH<code> command. It takes a series of letters after it, which indicate what crunching to apply &ndash; in some instances, these are case sensitive.
 
+<definition target="E">
+Setting <param>E</param> will cause empty statements to be removed from the file, along with any empty lines (whether already there or created by removing empty statements).
+</definition>
 
+<definition target="I">
+The <param>I</param> option will cause all start-of-line indentation to be removed (tabs and spaces) so that all lines start in the first column.
+</definition>
+
+<definition target="R">
+The <param>r</param> and <param>R</param> options allow comments to be stripped from the source code; if used in conjunction with <param>E</param> then any lines which end up being emty will get removed. An upper case <param>R</param> will strip all comments; a lower case <param>r</param> will only strip comments after the first contiguous block of lines containing only <code>REM</code> statements at the head of the first file. In other words
+
+<codeblock>
+REM >Example
+REM
+REM This is the end of the end of the head comment.
+
+REM This line will be removed.
+</codeblock>
+
+and even
+
+<codeblock>
+REM >Example
+REM
+REM This is the end of the end of the head comment.
+PRINT "Hello World!" : REM This comment will be removed.
+REM This line will be removed.
+</codeblock>
+
+would both result in
+
+<codeblock>
+REM >Example
+REM
+REM This is the end of the end of the head comment.
+PRINT "Hello World!"
+</codeblock>
+
+being output to the tokenized BASIC file given a setting of <command>-crunch er</command>.
+</definition>
+
+<definition target="W">
+The <param>w</param> and <param>W</param> options allow whitespace to be removed from within lines. Using the lower case <param>w</param> results in all blocks of contiguous whitespace (tabs and spaces) being reduced to a single space, while the upper case <param>W</param> will cause it to be removed completely.
+</definition>
 </chapter>
 
 
 <chapter title="Errors and Warnings" file="Errors">
 
+There are a number of error and warning messages that <cite>Tokenize<cite> can generate while running. These can indicate problems with the source BASIC code, or with the availability of files on disc, and are detailed here.
 
-Variable LIBRARY not linked.
+In addition, adding the <param>-verbose</param> flag to the command line will cause <cite>Tokenize</cite> to produce additional information about what it is doing during linking and tokenizing.
+
+<subhead title="Errors">
+
+Errors are generated during the linking and tokenization process when a problem occurs which can not be resolved. The process will be halted, and must be re-started once the error has been resolved.
+
+<definition target="Failed to open source file '&lt;file&gt;'">
+A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive.
+</definition>
+
+<definition target="Invalid line number constant">
+A line number given to a statement such as <code>GOTO</code> or <code>RESTORE</code> is too large. BASIC can only handle numbers up to 65535.
+</definition>
+
+<definition target="Line number &lt;n&gt; out of sequence">
+A line number explicitly specified in a source file is out of sequence, and would be less than or equal to the number of the line before. This could be due to a clear error such as
+
+<codeblock>
+20 REM This will give an error.
+10 PRINT "Hello World!"
+</codeblock>
+
+or it could be more subtle. In this example
+
+<codeblock>
+10 REM >Example
+   REM
+   REM This will give an error.
+20 PRINT "Hello World!"
+</codeblock>
+
+the default <param>-increment</param> of 10 will result in the two intermediate lines being given numbers of 20 and 30. By the time the <code>PRINT</code> statement is reached, the line 20 would need to be 41 or greater.
+</definition>
+
+
+<definition target="Line number &lt;n&gt; too large">
+A line number explicitly specified in a source file is too large. BASIC can only handle numbers up to 65535.
+</definition>
+
+<definition target="Misformed deleted statement">
+If <cite>Tokenize</cite> needs to remove a statement &ndash; such as a linked in <code>LIBRARY</code> or <code>REM</code> that is to be crunched &ndash; then it mist be able to determine that the statement terminates cleanly. If it finds additional text where it is expecting to find a colon or line ending, then an error would be raised. For example
+
+<codeblock>
+LIBRARY &quot;LibFile&quot; ELSE
+</codeblock>
+
+would cause this error. Note that such code would almost certainly raise a Syntax Error from BASIC itself, anyway.
+</definition>
+
+<definition target="Unisolated LIBRARY not linked">
+In order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite> needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
+
+<codeblock>
+IF condition% = TRUE THEN
+  LIBRARY "LibCode"
+ENDIF
+</codeblock>
+
+would be linked, but might have some unexpected consequences.
+</definition>
+
+<definition target="Unterminated string">
+String constants must be enclosed by double quotes (&quot;...&quot;), and a pair of double quotes (&quot;&quot;) together in a string is treated as a single double quote. <cite>Tokenize</cite> will raise an error if it reaches the end of a line in a source file whilst thinking that it is still inside a string.
+</definition>
+
+
+<subhead title="Warnings">
+
+Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well prevent the tokenized program from working.
+
+<definition target="Variable LIBRARY not linked">
+A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize can not determine the name of the file and will therefore leave the statement in situ.
+</definition>
 
 
 </chapter>
