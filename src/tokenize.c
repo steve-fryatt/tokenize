@@ -66,11 +66,6 @@ int main(int argc, char *argv[])
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
-	//stack_initialise(MAX_STACK_SIZE);
-
-	printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
-	printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
-
 	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S");
 	if (options == NULL) {
 		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
@@ -149,6 +144,11 @@ int main(int argc, char *argv[])
 	if (param_error) {
 		fprintf(stderr, "Usage: tokenize -out <output> <source1> [<source2> ...]\n");
 		return 1;
+	}
+
+	if (parse_options.verbose_output) {
+		printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
+		printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 	}
 
 	if (!tokenize_run_job(output_file, &parse_options))
