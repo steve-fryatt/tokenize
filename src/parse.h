@@ -32,11 +32,14 @@
 
 #include <stdbool.h>
 
+#define PARSE_MAX_LINE_NUMBER 65279
+
 /**
  * Structure defining the parse options.
  */
 
 struct parse_options {
+	unsigned	line_start;		/**< The initial line number for AUTO.				*/
 	unsigned	line_increment;		/**< The line number increment for AUTO.			*/
 
 	unsigned	tab_indent;		/**< The number of spaces to convert tabs into.			*/
@@ -82,7 +85,7 @@ enum parse_status {
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number, char *location);
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number, char *location);
 
 #endif
 

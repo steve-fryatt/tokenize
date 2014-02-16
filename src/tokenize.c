@@ -46,7 +46,7 @@
 #define MAX_LOCATION_TEXT 256
 
 bool tokenize_run_job(char *output_file, struct parse_options *options);
-bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options);
+bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options);
 
 int main(int argc, char *argv[])
 {
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 	/* Default processing options. */
 
 	parse_options.tab_indent = 8;
+	parse_options.line_start = 10;
 	parse_options.line_increment = 10;
 	parse_options.link_libraries = false;
 	parse_options.verbose_output = false;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S,help/S");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -108,8 +109,11 @@ int main(int argc, char *argv[])
 			if (options->data != NULL && options->data->value.boolean == true)
 				output_help = true;
 		} else if (strcmp(options->name, "increment") == 0) {
-			if (options->data != NULL)
+			if (options->data != NULL) {
 				parse_options.line_increment = options->data->value.integer;
+				if (parse_options.line_increment < 1 || parse_options.line_increment > PARSE_MAX_LINE_NUMBER)
+					param_error = true;
+			}
 		} else if (strcmp(options->name, "link") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				parse_options.link_libraries = true;
@@ -127,6 +131,12 @@ int main(int argc, char *argv[])
 				}
 			} else {
 				param_error = true;
+			}
+		} else if (strcmp(options->name, "start") == 0) {
+			if (options->data != NULL) {
+				parse_options.line_start = options->data->value.integer;
+				if (parse_options.line_start < 0 || parse_options.line_start > PARSE_MAX_LINE_NUMBER)
+					param_error = true;
 			}
 		} else if (strcmp(options->name, "out") == 0) {
 			if (options->data != NULL && options->data->value.string != NULL)
@@ -176,6 +186,7 @@ int main(int argc, char *argv[])
 		printf(" -link               Link files from LIBRARY statements.\n");
 		printf(" -out <file>         Write tokenised basic to file <out>.\n");
 		printf(" -path <name>:<path> Set path variable <name> to <path>.\n"); 
+		printf(" -start <n>          Set the AUTO line number start to <n>.\n");
 		printf(" -tab <n>            Set the tab column with to <n> spaces.\n");
 		printf(" -verbose            Generate verbose process information.\n");
 	
@@ -204,7 +215,7 @@ int main(int argc, char *argv[])
 bool tokenize_run_job(char *output_file, struct parse_options *options)
 {
 	FILE		*in, *out;
-	unsigned	line_number = 0;
+	int		line_number = -1;
 	bool		success = true;
 
 	if (output_file == NULL || options == NULL)
@@ -241,7 +252,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
  * \return		True on success; false if an error occurred.
  */
 
-bool tokenize_parse_file(FILE *in, FILE *out, unsigned *line_number, struct parse_options *options)
+bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
 {
 	char		line[MAX_INPUT_LINE_LENGTH], location[MAX_LOCATION_TEXT], *tokenised, *file;
 	bool		assembler = false;

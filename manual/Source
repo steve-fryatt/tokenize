@@ -87,11 +87,11 @@ Keyword abbreviations are fully supported, using the rules defined in the <cite>
 
 <subhead title="Line Numbers">
 
-All BASIC programs must have line numbers, but if they are not included in its source files then <cite>Tokenize</cite> will add them automatically.
+All BASIC programs must have line numbers, but if they are not included in the supplied source files then <cite>Tokenize</cite> will add them automatically.
 
-A line number is considered to be any digits at the start of a line &ndash; otherwise, lines should start with non-numeric characters. The whitespace around line numbers is optional; if a number is present, the space before it will be ignored for the purposes of indenting what follows.
+A line number is considered to be any digits at the start of a line &ndash; otherwise, lines should start with non-numeric characters. The whitespace around line numbers is optional; if a number is present, the space before it will be ignored for the purposes of indenting what follows. Numbers can fall in the range from 0 to 65279 inclusive, which is the range allowed by BASIC.
 
-If line numbers are present in the source files, then they will be used in the output. If they are not present, then <cite>Tokenize</cite> will number the lines it creates automatically and increment using the value given by the <param>-increment</param> parameter &ndash; this defaults to 10 if not specified.
+If line numbers are present in the source files, then they will be used in the output. If they are not present, then <cite>Tokenize</cite> will number the lines it creates automatically: starting at the value given to the <param>-start</param> parameter and incrementing by the value given to the <param>-increment</param> parameter &ndash; these both default to 10 if not specified.
 
 If line numbers are given, they must be sequential: duplicate numbers are not allowed, and lines can not be numbered backwards. It is possible to mix numbered and un-numbered lines, in which case <cite>Tokenize</cite> will switch between the two numbering methods: numbers must still be sequential, and if the numbered lines break the automatic sequence an error will be given. Thus
 
@@ -243,6 +243,10 @@ In addition, adding the <param>-verbose</param> flag to the command line will ca
 
 Errors are generated during the linking and tokenization process when a problem occurs which can not be resolved. The process will be halted, and must be re-started once the error has been resolved.
 
+<definition target="AUTO line number too large">
+Automatic line numbering applied via the <param>-start</param> and <param>-increment</param> parameters has risen above the maximum allowed value of 65279.
+</definition>
+
 <definition target="Failed to open source file '&lt;file&gt;'">
 A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive &ndash; references that work on RISC&nbsp;OS&rsquo;s case-insensitive Filecore systems might fail on other platform&rsquo;s case-sensitive filesystems.
 </definition>
@@ -271,9 +275,8 @@ or it could be more subtle. In this example
 the default <param>-increment</param> of 10 will result in the two intermediate lines being given numbers of 20 and 30. By the time the <code>PRINT</code> statement is reached, the line 20 would need to be 41 or greater.
 </definition>
 
-
-<definition target="Line number &lt;n&gt; too large">
-A line number explicitly specified in a source file is too large. BASIC can only handle numbers up to 65535.
+<definition target="Line number &lt;n&gt; out of range">
+A line number explicitly specified in a source file is too large or too small. BASIC can only handle numbers between 0 and 65279.
 </definition>
 
 <definition target="Misformed deleted statement">

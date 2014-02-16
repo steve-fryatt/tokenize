@@ -461,10 +461,10 @@ static void parse_process_to_line_end(char **read, char **write);
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, unsigned *line_number, char *location)
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number, char *location)
 {
 	char			*read = line, *write = parse_buffer;
-	unsigned		read_number = 0;
+	int			read_number = 0;
 	int			leading_spaces = 0;
 	enum parse_status	status = PARSE_COMPLETE;
 
@@ -498,17 +498,23 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		write = parse_buffer;
 		leading_spaces = 0;
 
-		if (read_number > 0xffff) {
-			fprintf(stderr, "Error: Line number %u too large at%s\n", read_number, location);
+		if (read_number < 0 || read_number > PARSE_MAX_LINE_NUMBER) {
+			fprintf(stderr, "Error: Line number %u out of range%s\n", read_number, location);
 			return NULL;
 		} else if (read_number > *line_number) {
 			*line_number = read_number;
 		} else if (read_number <= *line_number) {
-			fprintf(stderr, "Error: Line number %u out of sequence at%s\n", read_number, location);
+			fprintf(stderr, "Error: Line number %u out of sequence%s\n", read_number, location);
 			return NULL;
 		}
+	} else if (*line_number == -1) {
+		*line_number = options->line_start;
 	} else {
 		*line_number += options->line_increment;
+		if (*line_number > PARSE_MAX_LINE_NUMBER) {
+			fprintf(stderr, "Error: AUTO line number too large%s\n", location);
+			return NULL;
+		}
 	}
 
 	/* Again, trim any whitespace that followed the line number. */
