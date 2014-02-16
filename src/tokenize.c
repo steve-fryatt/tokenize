@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	bool			output_help = false;
 	struct args_option	*options;
 	struct args_data	*option_data;
-	char *output_file	= NULL;
+	char			*output_file = NULL;
 	struct parse_options	parse_options;
 
 	/* Default processing options. */
@@ -73,6 +73,8 @@ int main(int argc, char *argv[])
 	/* Decode the command line options. */
 
 	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S,help/S");
+	if (options == NULL)
+		param_error = true;
 
 	while (options != NULL) {
 		if (strcmp(options->name, "crunch") == 0) {
@@ -151,17 +153,16 @@ int main(int argc, char *argv[])
 		options = options->next;
 	}
 
-	/* Generate any necessary verbose or help output. If options is NULL or
-	 * param_error is true, then we need to give some usage guidance and
-	 * exit with an error.
+	/* Generate any necessary verbose or help output. If param_error is true,
+	 * then we need to give some usage guidance and exit with an error.
 	 */
 
-	if (options == NULL || param_error || output_help || parse_options.verbose_output) {
+	if (param_error || output_help || parse_options.verbose_output) {
 		printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 		printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 	}
 	
-	if (options == NULL || param_error || output_help) {
+	if (param_error || output_help) {
 		printf("ARM BASIC V Tokenizer -- Usage:\n");
 		printf("tokenize <infile> [<infile> ...] -out <outfile> [<options>]\n\n");
 
