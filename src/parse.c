@@ -101,7 +101,7 @@ static struct keyword parse_keywords[] = {
 	{"ENDWHILE",	4,	0xce,	0xce	},	/* 41	*/
 	{"EOF",		3,	0xc5,	0xc5	},	/* 42	*/
 	{"EOR",		3,	0x82,	0x82	},	/* 43	*/
-	{"ERL",		3,	0x93,	0x93	},	/* 44	*/
+	{"ERL",		3,	0x9e,	0x9e	},	/* 44	*/
 	{"ERR",		3,	0x9f,	0x9f	},	/* 45	*/
 	{"ERROR",	3,	0x85,	0x85	},	/* 46	*/
 	{"EVAL",	2,	0xa0,	0xa0	},	/* 47	*/
@@ -125,7 +125,7 @@ static struct keyword parse_keywords[] = {
 	{"INSTALL",	5,	0x9ac8,	0x9ac8	},	/* 65	*/
 	{"INSTR(",	3,	0xa7,	0xa7	},	/* 66	*/
 	{"INT",		3,	0xa8,	0xa8	},	/* 67	*/
-	{"LEFT$",	2,	0xc0,	0xc0	},	/* 68	*/
+	{"LEFT$(",	2,	0xc0,	0xc0	},	/* 68	*/
 	{"LEN",		3,	0xa9,	0xa9	},	/* 69	*/
 	{"LET",		3,	0xe9,	0xe9	},	/* 70	*/
 	{"LIBRARY",	3,	0x9bc8,	0x9bc8	},	/* 71	*/
