@@ -42,6 +42,8 @@
 
 #define MAX_TOKENISED_LINE 1024
 
+#define TOKEN_CONST 0x8d
+
 /**
  * List of keyword array indexes. This must match the entries in the 
  * parse_keywords[] array defined further down the file.
@@ -1092,7 +1094,7 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 	if (line > 0xffff)
 		return false;
 
-	*(*write)++ = 0x8d;
+	*(*write)++ = TOKEN_CONST;
 	*(*write)++ = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
 	*(*write)++ = (line & 0x3f) | 0x40;
 	*(*write)++ = ((line & 0x3f00) >> 8) | 0x40;
