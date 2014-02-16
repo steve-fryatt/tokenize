@@ -41,6 +41,12 @@
 #include "library.h"
 #include "parse.h"
 
+/* OSLib source headers. */
+
+#ifdef RISCOS
+#include "oslib/osfile.h"
+#endif
+
 
 #define MAX_INPUT_LINE_LENGTH 1024
 #define MAX_LOCATION_TEXT 256
@@ -145,6 +151,12 @@ int main(int argc, char *argv[])
 				param_error = true;
 		} else if (strcmp(options->name, "path") == 0) {
 			if (options->data != NULL) {
+#ifdef LINUX
+				/* The path parameter is valid on non-RISC OS systems,
+				 * as we don't have native system variables to fall
+				 * back on.
+				 */
+
 				option_data = options->data;
 				
 				while (option_data != NULL) {
@@ -154,6 +166,14 @@ int main(int argc, char *argv[])
 						param_error = NULL;
 					option_data = option_data->next;
 				}
+#endif
+#ifdef RISCOS
+				/* On RISC OS, there's no point setting paths as
+				 * it is better to use real system variables.
+				 */
+
+				param_error = true;
+#endif
 			}
 		} else if (strcmp(options->name, "tab") == 0) {
 			if (options->data != NULL)
@@ -237,7 +257,11 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 	fputc(0xff, out);
 
 	fclose(out);
-	
+
+#if RISCOS
+	osfile_set_type(output_file, osfile_TYPE_BASIC);
+#endif
+
 	return true;
 }
 

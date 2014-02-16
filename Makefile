@@ -83,10 +83,10 @@ MENUGEN := $(SFBIN)/menugen
 # Build Flags
 
 ifeq ($(TARGET),riscos)
-  CCFLAGS := -mlibscl -mhard-float -static -mthrowback -Wall -O2 -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"' -fno-strict-aliasing -mpoke-function-name
+  CCFLAGS := -mlibscl -mhard-float -static -mthrowback -Wall -O2 -D'RISCOS' -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"' -fno-strict-aliasing -mpoke-function-name
   ZIPFLAGS := -x "*/.svn/*" -r -, -9
 else
-  CCFLAGS := -Wall -O2 -fno-strict-aliasing -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"'
+  CCFLAGS := -Wall -O2 -fno-strict-aliasing -D'LINUX' -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"'
   ZIPFLAGS := -x "*/.svn/*" -r -9
 endif
 SRCZIPFLAGS := -x "*/.svn/*" -r -9
@@ -130,6 +130,11 @@ endif
 
 
 # Set up the source files.
+
+ifeq ($(TARGET),riscos)
+  INCLUDES := -I$(GCCSDK_INSTALL_ENV)/include
+  LINKS := -L$(GCCSDK_INSTALL_ENV)/lib -lOSLibH32
+endif
 
 MANSRC := Source
 MANSPR := ManSprite

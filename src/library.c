@@ -123,14 +123,18 @@ void library_add_path(char *name, char *path)
 
 void library_add_file(char *file)
 {
-	struct library_path	*paths = library_path_head;
+	char			*copy = NULL;
 	struct library_file	*new = NULL;
-	char			*copy = NULL, *tail = NULL, *temp;
+#ifdef LINUX
+	char			*tail = NULL, *temp;
+	struct library_path	*paths = library_path_head;
+#endif
 
 	copy = strdup(file);
 	if (copy == NULL)
 		return;
 
+#ifdef LINUX
 	tail = strchr(copy, ':');
 	if (tail != NULL) {
 		*tail++ = '\0';
@@ -152,6 +156,7 @@ void library_add_file(char *file)
 			free(temp);
 		}
 	}
+#endif
 
 	new = malloc(sizeof(struct library_file));
 	if (new == NULL)
