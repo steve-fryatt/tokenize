@@ -49,7 +49,7 @@
  * parse_keywords[] array defined further down the file.
  */
 
-enum keyword {
+enum parse_keyword {
 	KWD_NO_MATCH = -1,	/**< Indicates that no keyword macth is available.		*/
 	KWD_ABS = 0,		/**< Keywords start at array index 0 and go alphabetically.	*/
 	KWD_ACS,
@@ -220,7 +220,7 @@ enum keyword {
  * Individual keyword definition.
  */
 
-struct keyword_definition {
+struct parse_keyword_definition {
 	char		*name;		/**< The name of the keyword.				*/
 	int		abbrev;		/**< The minimum number of characters allowed.		*/
 	unsigned	start;		/**< The token if at the start of a statement.		*/
@@ -231,10 +231,10 @@ struct keyword_definition {
 /**
  * The table of known keywords and their tokens.  The keywords *must* be in
  * alphabetical order, to allow the search routine to operate, and this should
- * also match the entries in enum keyword.
+ * also match the entries in enum parse_keyword.
  */
 
-static struct keyword_definition parse_keywords[] = {
+static struct parse_keyword_definition parse_keywords[] = {
 	{"ABS",		3,	0x94,	0x94	},
 	{"ACS",		3,	0x95,	0x95	},
 	{"ADVAL",	2,	0x96,	0x96	},
@@ -404,7 +404,7 @@ static struct keyword_definition parse_keywords[] = {
  * KWD_NO_MATCH indicates that there are no keywords starting with that letter.
  */
 
-static enum keyword parse_keyword_index[] = {
+static enum parse_keyword parse_keyword_index[] = {
 	KWD_ABS,	/**< A	*/
 	KWD_BEAT,	/**< B	*/
 	KWD_CALL,	/**< C	*/
@@ -438,7 +438,7 @@ static char library_path[MAX_TOKENISED_LINE];
 
 
 static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location);
-static enum keyword parse_match_token(char **buffer);
+static enum parse_keyword parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
 static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces);
@@ -653,15 +653,15 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 {
 	enum parse_status	status = PARSE_WHITESPACE;
 
-	bool		statement_start = true;		/**< True while we're at the start of a statement.		*/
-	bool		constant_due = false;		/**< True if a line number constant could be coming up.		*/
-	bool		library_path_due = false;	/**< True if we're expecting a library path.			*/
-	bool		clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
+	bool			statement_start = true;		/**< True while we're at the start of a statement.		*/
+	bool			constant_due = false;		/**< True if a line number constant could be coming up.		*/
+	bool			library_path_due = false;	/**< True if we're expecting a library path.			*/
+	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
 
-	int		extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
-	enum keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.		*/
+	int			extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
+	enum parse_keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.		*/
 
-	char		*start_pos = *write;		/**< A pointer to the start of the statement.			*/
+	char			*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
 	while (**read != '\n' && **read != ':') {
 		/* If the character isn't whitespace, then the line can't be
@@ -874,15 +874,15 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
  * \return		The ID of any matching keyword, or -1 for none found.
  */
 
-static enum keyword parse_match_token(char **buffer)
+static enum parse_keyword parse_match_token(char **buffer)
 {
-	char		*start = *buffer;
-	enum keyword	keyword = KWD_NO_MATCH;
-	int		result = 0;
-	enum keyword	full = KWD_NO_MATCH;
-	char		*full_end = NULL;
-	enum keyword	partial = -1;
-	char		*partial_end = NULL;
+	char			*start = *buffer;
+	enum parse_keyword	keyword = KWD_NO_MATCH;
+	int			result = 0;
+	enum parse_keyword	full = KWD_NO_MATCH;
+	char			*full_end = NULL;
+	enum parse_keyword	partial = -1;
+	char			*partial_end = NULL;
 
 	/* If the code doesn't start with an upper case letter, it's not a keyword */
 
