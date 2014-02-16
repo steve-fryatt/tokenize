@@ -42,21 +42,195 @@
 
 #define MAX_TOKENISED_LINE 1024
 
-struct keyword {
+/**
+ * List of keyword array indexes. This must match the entries in the 
+ * parse_keywords[] array defined further down the file.
+ */
+
+enum keyword {
+	KWD_NO_MATCH = -1,	/**< Indicates that no keyword macth is available.		*/
+	KWD_ABS = 0,		/**< Keywords start at array index 0 and go alphabetically.	*/
+	KWD_ACS,
+	KWD_ADVAL,
+	KWD_AND,
+	KWD_APPEND,
+	KWD_ASC,
+	KWD_ASN,
+	KWD_ATN,
+	KWD_AUTO,
+	KWD_BEAT,
+	KWD_BEATS,
+	KWD_BGET,
+	KWD_BPUT,
+	KWD_CALL,
+	KWD_CASE,
+	KWD_CHAIN,
+	KWD_CHR$,
+	KWD_CIRCLE,
+	KWD_CLEAR,
+	KWD_CLG,
+	KWD_CLOSE,
+	KWD_CLS,
+	KWD_COLOR,
+	KWD_COLOUR,
+	KWD_COS,
+	KWD_COUNT,
+	KWD_CRUNCH,
+	KWD_DATA,
+	KWD_DEF,
+	KWD_DEG,
+	KWD_DELETE,
+	KWD_DIM,
+	KWD_DIV,
+	KWD_DRAW,
+	KWD_EDIT,
+	KWD_ELLIPSE,
+	KWD_ELSE,
+	KWD_END,
+	KWD_ENDCASE,
+	KWD_ENDIF,
+	KWD_ENDPROC,
+	KWD_ENDWHILE,
+	KWD_EOF,
+	KWD_EOR,
+	KWD_ERL,
+	KWD_ERR,
+	KWD_ERROR,
+	KWD_EVAL,
+	KWD_EXP,
+	KWD_EXT,
+	KWD_FALSE,
+	KWD_FILL,
+	KWD_FN,
+	KWD_FOR,
+	KWD_GCOL,
+	KWD_GET,
+	KWD_GET$,
+	KWD_GOSUB,
+	KWD_GOTO,
+	KWD_HELP,
+	KWD_HIMEM,
+	KWD_IF,
+	KWD_INKEY,
+	KWD_INKEY$,
+	KWD_INPUT,
+	KWD_INSTALL,
+	KWD_INSTR,
+	KWD_INT,
+	KWD_LEFT$,
+	KWD_LEN,
+	KWD_LET,
+	KWD_LIBRARY,
+	KWD_LINE,
+	KWD_LIST,
+	KWD_LN,
+	KWD_LOAD,
+	KWD_LOCAL,
+	KWD_LOG,
+	KWD_LOMEM,
+	KWD_LVAR,
+	KWD_MID$,
+	KWD_MOD,
+	KWD_MODE,
+	KWD_MOUSE,
+	KWD_MOVE,
+	KWD_NEW,
+	KWD_NEXT,
+	KWD_NOT,
+	KWD_OF,
+	KWD_OFF,
+	KWD_OLD,
+	KWD_ON,
+	KWD_OPENIN,
+	KWD_OPENOUT,
+	KWD_OPENUP,
+	KWD_OR,
+	KWD_ORIGIN,
+	KWD_OSCLI,
+	KWD_OTHERWISE,
+	KWD_OVERLAY,
+	KWD_PAGE,
+	KWD_PI,
+	KWD_PLOT,
+	KWD_POINT,
+	KWD_POINT2,
+	KWD_POS,
+	KWD_PRINT,
+	KWD_PROC,
+	KWD_PTR,
+	KWD_QUIT,
+	KWD_READ,
+	KWD_RECTANGLE,
+	KWD_REM,
+	KWD_RENUMBER,
+	KWD_REPEAT,
+	KWD_REPORT,
+	KWD_RESTORE,
+	KWD_RETURN,
+	KWD_RIGHT$,
+	KWD_RND,
+	KWD_RUN,
+	KWD_SAVE,
+	KWD_SGN,
+	KWD_SIN,
+	KWD_SOUND,
+	KWD_SPC,
+	KWD_SQR,
+	KWD_STEP,
+	KWD_STEREO,
+	KWD_STOP,
+	KWD_STR$,
+	KWD_STRING$,
+	KWD_SUM,
+	KWD_SWAP,
+	KWD_SYS,
+	KWD_TAB,
+	KWD_TAN,
+	KWD_TEMPO,
+	KWD_TEXTLOAD,
+	KWD_TEXTSAVE,
+	KWD_THEN,
+	KWD_TIME,
+	KWD_TINT,
+	KWD_TO,
+	KWD_TRACE,
+	KWD_TRUE,
+	KWD_TWIN,
+	KWD_TWINO,
+	KWD_UNTIL,
+	KWD_USR,
+	KWD_VAL,
+	KWD_VDU,
+	KWD_VOICE,
+	KWD_VOICES,
+	KWD_VPOS,
+	KWD_WAIT,
+	KWD_WHEN,
+	KWD_WHILE,
+	KWD_WIDTH,
+	MAX_KEYWORDS		/**< The maximum number of keywords available.			*/
+};
+
+
+/**
+ * Individual keyword definition.
+ */
+
+struct keyword_definition {
 	char		*name;		/**< The name of the keyword.				*/
 	int		abbrev;		/**< The minimum number of characters allowed.		*/
 	unsigned	start;		/**< The token if at the start of a statement.		*/
 	unsigned	elsewhere;	/**< The token if elsewhere in a statement.		*/
 };
 
+
 /**
  * The table of known keywords and their tokens.  The keywords *must* be in
- * alphabetical order, to allow the search routine to operate.
+ * alphabetical order, to allow the search routine to operate, and this should
+ * also match the entries in enum keyword.
  */
 
-#define MAX_KEYWORDS 6
-
-static struct keyword parse_keywords[] = {
+static struct keyword_definition parse_keywords[] = {
 	{"ABS",		3,	0x94,	0x94	},	/* 0	*/
 	{"ACS",		3,	0x95,	0x95	},	/* 1	*/
 	{"ADVAL",	2,	0x96,	0x96	},	/* 2	*/
@@ -220,11 +394,11 @@ static struct keyword parse_keywords[] = {
 };
 
 /**
- * Indexes into the keywords table for the various initial letters. -1
- * indicates that there are no keywords starting with that letter.
+ * Indexes into the keywords table for the various initial letters.
+ * KWD_NO_MATCH indicates that there are no keywords starting with that letter.
  */
 
-static int parse_keyword_index[] = {
+static enum keyword parse_keyword_index[] = {
 	KWD_ABS,	/**< A	*/
 	KWD_BEAT,	/**< B	*/
 	KWD_CALL,	/**< C	*/
@@ -234,8 +408,8 @@ static int parse_keyword_index[] = {
 	KWD_GCOL,	/**< G	*/
 	KWD_HELP,	/**< H	*/
 	KWD_IF,		/**< I	*/
-	-1,		/**< J	*/
-	-1,		/**< K	*/
+	KWD_NO_MATCH,	/**< J	*/
+	KWD_NO_MATCH,	/**< K	*/
 	KWD_LEFT$,	/**< L	*/
 	KWD_MID$,	/**< M	*/
 	KWD_NEW,	/**< N	*/
@@ -248,9 +422,9 @@ static int parse_keyword_index[] = {
 	KWD_UNTIL,	/**< U	*/
 	KWD_VAL,	/**< V	*/
 	KWD_WAIT,	/**< W	*/
-	-1,		/**< X	*/
-	-1,		/**< Y	*/
-	-1		/**< Z	*/
+	KWD_NO_MATCH,	/**< X	*/
+	KWD_NO_MATCH,	/**< Y	*/
+	KWD_NO_MATCH	/**< Z	*/
 };
 
 static char parse_buffer[MAX_TOKENISED_LINE];
@@ -258,7 +432,7 @@ static char library_path[MAX_TOKENISED_LINE];
 
 
 static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location);
-static int parse_match_token(char **buffer);
+static enum keyword parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
 static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces);
@@ -303,7 +477,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
-	
+
 		read++;
 	}
 
@@ -339,7 +513,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
-	
+
 		read++;
 	}
 
@@ -366,7 +540,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 		if (status == PARSE_DELETED) {
 			/* If the statement was deleted, remove any following separator. */
-		
+
 			if (*read == ':')
 				read++;
 		} else if (status == PARSE_WHITESPACE || status == PARSE_COMMENT || status == PARSE_COMPLETE) {
@@ -403,7 +577,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			/* The statement tokeniser returned an error, so report
 			 * it with a suitable message and quit.
 			 */
-		
+
 			char	*error;
 
 			switch (status) {
@@ -420,7 +594,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 				error = "Unknown error";
 				break;
 			}
-			
+
 			fprintf(stderr, "Error: %s at%s\n", error, location);
 			return NULL;
 		}
@@ -473,15 +647,15 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 {
 	enum parse_status	status = PARSE_WHITESPACE;
 
-	bool	statement_start = true;		/**< True while we're at the start of a statement.		*/
-	bool	constant_due = false;		/**< True if a line number constant could be coming up.		*/
-	bool	library_path_due = false;	/**< True if we're expecting a library path.			*/
-	bool	clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
+	bool		statement_start = true;		/**< True while we're at the start of a statement.		*/
+	bool		constant_due = false;		/**< True if a line number constant could be coming up.		*/
+	bool		library_path_due = false;	/**< True if we're expecting a library path.			*/
+	bool		clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
 
-	int	extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
-	int	token = 0;			/**< Storage for any keyword tokens that we look up.		*/
+	int		extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
+	enum keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.		*/
 
-	char	*start_pos = *write;		/**< A pointer to the start of the statement.			*/
+	char		*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
 	while (**read != '\n' && **read != ':') {
 		/* If the character isn't whitespace, then the line can't be
@@ -504,7 +678,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 		} else if (**read == '[') {
 			/* This is the start of an assembler block. */
-		
+
 			*assembler = true;
 			*(*write)++ = *(*read)++;
 
@@ -532,7 +706,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != -1) {
+		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != KWD_NO_MATCH) {
 			/* Handle keywords */
 			unsigned bytes;
 
@@ -593,6 +767,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				else
 					fprintf(stderr, "Warning: Unisolated LIBRARY not linked%s\n", location);
 				break;
+			default:
+				break;
 			}
 
 			statement_start = false;
@@ -620,7 +796,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
 			parse_process_numeric_constant(read, write);
-			
+
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
@@ -692,28 +868,28 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
  * \return		The ID of any matching keyword, or -1 for none found.
  */
 
-static int parse_match_token(char **buffer)
+static enum keyword parse_match_token(char **buffer)
 {
-	char	*start = *buffer;
-	int	keyword = 0;
-	int	result = 0;
-	int	full = -1;
-	char	*full_end = NULL;
-	int	partial = -1;
-	char	*partial_end = NULL;
+	char		*start = *buffer;
+	enum keyword	keyword = KWD_NO_MATCH;
+	int		result = 0;
+	enum keyword	full = KWD_NO_MATCH;
+	char		*full_end = NULL;
+	enum keyword	partial = -1;
+	char		*partial_end = NULL;
 
 	/* If the code doesn't start with an upper case letter, it's not a keyword */
 
 	if (buffer == NULL || *start < 'A' || *start > 'Z')
-		return -1;
+		return KWD_NO_MATCH;
 
 	/* Find the first entry in the keyword table that will match. If there isn't
 	 * one, then report a fail immediately.
 	 */
 
 	keyword = parse_keyword_index[*start - 'A'];
-	if (keyword == -1)
-		return -1;
+	if (keyword == KWD_NO_MATCH)
+		return KWD_NO_MATCH;
 
 	/* Scan through the keyword table from the start point identified above
 	 * until we find that we've alphabetically passed the text to be matched.
@@ -786,24 +962,24 @@ static int parse_match_token(char **buffer)
 		}
 
 		keyword++;
-	} while (result <= 0);
+	} while (result <= 0 && keyword < MAX_KEYWORDS);
 
 	/* Return a result. If there's a full match, use this. If not, use a
 	 * partial one if available. By definition (above), the full match must
 	 * be longer than the partial one, and so correct.
 	 */
 
-	if (full != -1) {
+	if (full != KWD_NO_MATCH) {
 		*buffer = full_end;
 		return full;
 	}
 
-	if (partial != -1) {
+	if (partial != KWD_NO_MATCH) {
 		*buffer = partial_end;
 		return partial;
 	}
 
-	return -1;
+	return KWD_NO_MATCH;
 }
 
 
