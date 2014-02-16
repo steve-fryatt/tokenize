@@ -101,7 +101,7 @@ If line numbers are given, they must be sequential: duplicate numbers are not al
    NEXT i%
 </codeblock>
 
-would be valid using the default value for <param>-increment</param> and would result in lines 10, 15 and 25 being generated. However
+would be valid using the default value for <param>-start</param> and <param>-increment</param> and would result in lines 10, 15 and 25 being generated. However
 
 <codeblock>
    FOR i% = 1 TO 10
@@ -109,7 +109,7 @@ would be valid using the default value for <param>-increment</param> and would r
    NEXT i%
 </codeblock>
 
-would not be valid, and would give the error &ldquo;Line number 5 out of sequence at line 2 of &lsquo;example file&rsquo;&rdquo; (because this would be trying to create the sequence 10, 5 and 15 using the default settings of <param>-increment</param>).
+would not be valid, and would give the error &ldquo;Line number 5 out of sequence at line 2 of &lsquo;example file&rsquo;&rdquo; (because this would be trying to create the sequence 10, 5 and 15 using the default settings of <param>-start</param> and <param>-increment</param>).
 
 
 <subhead title="Linking and Libraries">
