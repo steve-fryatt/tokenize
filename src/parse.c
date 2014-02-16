@@ -67,7 +67,7 @@ enum parse_keyword {
 	KWD_CALL,
 	KWD_CASE,
 	KWD_CHAIN,
-	KWD_CHR$,
+	KWD_CHR_D,
 	KWD_CIRCLE,
 	KWD_CLEAR,
 	KWD_CLG,
@@ -108,19 +108,19 @@ enum parse_keyword {
 	KWD_FOR,
 	KWD_GCOL,
 	KWD_GET,
-	KWD_GET$,
+	KWD_GET_D,
 	KWD_GOSUB,
 	KWD_GOTO,
 	KWD_HELP,
 	KWD_HIMEM,
 	KWD_IF,
 	KWD_INKEY,
-	KWD_INKEY$,
+	KWD_INKEY_D,
 	KWD_INPUT,
 	KWD_INSTALL,
 	KWD_INSTR,
 	KWD_INT,
-	KWD_LEFT$,
+	KWD_LEFT_D,
 	KWD_LEN,
 	KWD_LET,
 	KWD_LIBRARY,
@@ -132,7 +132,7 @@ enum parse_keyword {
 	KWD_LOG,
 	KWD_LOMEM,
 	KWD_LVAR,
-	KWD_MID$,
+	KWD_MID_D,
 	KWD_MOD,
 	KWD_MODE,
 	KWD_MOUSE,
@@ -171,7 +171,7 @@ enum parse_keyword {
 	KWD_REPORT,
 	KWD_RESTORE,
 	KWD_RETURN,
-	KWD_RIGHT$,
+	KWD_RIGHT_D,
 	KWD_RND,
 	KWD_RUN,
 	KWD_SAVE,
@@ -183,8 +183,8 @@ enum parse_keyword {
 	KWD_STEP,
 	KWD_STEREO,
 	KWD_STOP,
-	KWD_STR$,
-	KWD_STRING$,
+	KWD_STR_D,
+	KWD_STRING_D,
 	KWD_SUM,
 	KWD_SWAP,
 	KWD_SYS,
@@ -416,8 +416,8 @@ static enum parse_keyword parse_keyword_index[] = {
 	KWD_IF,		/**< I	*/
 	KWD_NO_MATCH,	/**< J	*/
 	KWD_NO_MATCH,	/**< K	*/
-	KWD_LEFT$,	/**< L	*/
-	KWD_MID$,	/**< M	*/
+	KWD_LEFT_D,	/**< L	*/
+	KWD_MID_D,	/**< M	*/
 	KWD_NEW,	/**< N	*/
 	KWD_OF,		/**< O	*/
 	KWD_PAGE,	/**< P	*/
