@@ -140,10 +140,10 @@ int main(int argc, char *argv[])
 				while (option_data != NULL) {
 					if (option_data->value.string != NULL)
 						library_add_path_combined(option_data->value.string);
+					else
+						param_error = NULL;
 					option_data = option_data->next;
 				}
-			} else {
-				param_error = true;
 			}
 		} else if (strcmp(options->name, "tab") == 0) {
 			if (options->data != NULL)
