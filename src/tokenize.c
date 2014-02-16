@@ -205,7 +205,9 @@ int main(int argc, char *argv[])
 		printf(" -increment <n>      Set the AUTO line number increment to <n>.\n");
 		printf(" -link               Link files from LIBRARY statements.\n");
 		printf(" -out <file>         Write tokenised basic to file <out>.\n");
+#ifdef RISCOS
 		printf(" -path <name>:<path> Set path variable <name> to <path>.\n"); 
+#endif
 		printf(" -start <n>          Set the AUTO line number start to <n>.\n");
 		printf(" -tab <n>            Set the tab column with to <n> spaces.\n");
 		printf(" -verbose            Generate verbose process information.\n");
