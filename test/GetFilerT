@@ -7,9 +7,27 @@ REM 1.01 (8 September 2002)
 :
 ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
 :
-PRINT "Hello"; : LIBRARY "BASIC:WimpLib" ELSE : PRINT "World"
+PRINT "Hello"; : LIBRARY "BASIC:WimpLib" : PRINT "World"
 :
-PROCinitialise
+LIBRARY variable$
+
+IF TRUE THEN PRINT ELSE LIBRARY "BASIC:WimpLib"
+:
+PROCinitialise    : REM This is a comment
+PROCinitialise    :
+PROCinitialise    : 
+
+test$ = GET$
+test2$ = INKEY$10
+
+A.B.C.D.
+E.F.G.H.I.L.M.N.O.P.Q.R.S.T.U.V.W.FOR
+
+TIMER = 1 : PRINT TIMER+2
+TIME = 1
+TIMER = TIME
+ABSOLUTE
+
 :
 ON ERROR IF FNerror(task_name$)=2 THEN quit%=TRUE
 :
