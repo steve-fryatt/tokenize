@@ -951,7 +951,8 @@ static enum parse_keyword parse_match_token(char **buffer)
 			result = *(match - 1) - *(test - 1);
 			partial = keyword;
 			partial_end = test + 1; /* Skip the . as well. */
-		} else if (*match == '\0') {
+		} else if (*match == '\0' && (!parse_keywords[keyword].var_start ||
+				!((*test >= 'a' && *test <= 'z') || (*test >= 'A' && *test <= 'Z') || (*test >= '0' && *test <= '9') || *test == '_' || *test == '`'))) {
 			/* Otherwise, if we're at the end of the keyword, then
 			 * this must be an exact match.
 			 */
