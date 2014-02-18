@@ -467,7 +467,7 @@ static bool parse_is_name_body(char c);
 char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number, char *location)
 {
 	char			*read = line, *write = parse_buffer;
-	int			read_number = 0;
+	int			read_number = -1;
 	int			leading_spaces = 0;
 	enum parse_status	status = PARSE_COMPLETE;
 
@@ -504,18 +504,8 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		if (read_number < 0 || read_number > PARSE_MAX_LINE_NUMBER) {
 			fprintf(stderr, "Error: Line number %u out of range%s\n", read_number, location);
 			return NULL;
-		} else if (read_number > *line_number) {
-			*line_number = read_number;
 		} else if (read_number <= *line_number) {
 			fprintf(stderr, "Error: Line number %u out of sequence%s\n", read_number, location);
-			return NULL;
-		}
-	} else if (*line_number == -1) {
-		*line_number = options->line_start;
-	} else {
-		*line_number += options->line_increment;
-		if (*line_number > PARSE_MAX_LINE_NUMBER) {
-			fprintf(stderr, "Error: AUTO line number too large%s\n", location);
 			return NULL;
 		}
 	}
@@ -535,9 +525,9 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	/* Output the line start (CR, LineNo HI, LineNo LO, Length). */
 
 	*write++ = 0x0d;
-	*write++ = (*line_number & 0xff00) >> 8;
-	*write++ = (*line_number & 0x00ff);
-	*write++ = 0;
+	*write++ = 0;		/* Line number high byte placeholder.	*/
+	*write++ = 0;		/* Line number low byte placeholder.	*/
+	*write++ = 0;		/* Line length placeholder.		*/
 
 	/* Unless we're stripping all whitespace, output the line indent. */
 
@@ -636,6 +626,20 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	if (all_deleted == true) {
 		*parse_buffer = '\0';
 	} else {
+		if (read_number != -1) {
+			*line_number = read_number;
+		} else if (*line_number == -1) {
+			*line_number = options->line_start;
+		} else {
+			*line_number += options->line_increment;
+			if (*line_number > PARSE_MAX_LINE_NUMBER) {
+				fprintf(stderr, "Error: AUTO line number too large%s\n", location);
+				return NULL;
+			}
+		}
+
+		*(parse_buffer + 1) = (*line_number & 0xff00) >> 8;
+		*(parse_buffer + 2) = (*line_number & 0x00ff);
 		*(parse_buffer + 3) = (write - parse_buffer) & 0xff;
 		*write = '\0';
 	}
