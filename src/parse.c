@@ -448,6 +448,7 @@ static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
 static void parse_process_to_line_end(char **read, char **write);
+static bool parse_is_name_body(char c);
 
 /**
  * Parse a line of BASIC, returning a pointer to the tokenised form which will
@@ -951,8 +952,7 @@ static enum parse_keyword parse_match_token(char **buffer)
 			result = *(match - 1) - *(test - 1);
 			partial = keyword;
 			partial_end = test + 1; /* Skip the . as well. */
-		} else if (*match == '\0' && (!parse_keywords[keyword].var_start ||
-				!((*test >= 'a' && *test <= 'z') || (*test >= 'A' && *test <= 'Z') || (*test >= '0' && *test <= '9') || *test == '_' || *test == '`'))) {
+		} else if (*match == '\0' && (!parse_keywords[keyword].var_start || !parse_is_name_body(*test))) {
 			/* Otherwise, if we're at the end of the keyword, then
 			 * this must be an exact match.
 			 */
@@ -1129,7 +1129,7 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 
 static void parse_process_fnproc(char **read, char **write)
 {
-	while ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read >= '0' && **read <= '9') || **read == '_' || **read == '`')
+	while (parse_is_name_body(**read))
 		*(*write)++ = *(*read)++;
 }
 
@@ -1145,7 +1145,7 @@ static void parse_process_fnproc(char **read, char **write)
 
 static void parse_process_variable(char **read, char **write)
 {
-	while ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read >= '0' && **read <= '9') || **read == '_' || **read == '`')
+	while (parse_is_name_body(**read))
 		*(*write)++ = *(*read)++;
 	if (**read == '%' || **read == '$')
 		*(*write)++ = *(*read)++;
@@ -1203,3 +1203,18 @@ static void parse_process_to_line_end(char **read, char **write)
 	while (**read != '\n' && **read != '\r' && **read != '\0')
 		*(*write)++ = *(*read)++;
 }
+
+
+/**
+ * Test a character to see if it is a valid name body character (alphanumeric,
+ * _ and `), returning true or false.
+ *
+ * \param c		The character to test.
+ * \return		true if the character is valid; else false.
+ */
+
+static bool parse_is_name_body(char c)
+{
+	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '`') ? true : false;
+}
+
