@@ -538,6 +538,14 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			*write++ = ' ';
 	}
 
+	/* If there is no line to process, all_deleted must be pre-set to
+	 * reflect the crunch_empty option. Otherwise, it is set to true and
+	 * will be put to false as soon as the statement parser fails to
+	 * delete a statement.
+	 */
+
+	all_deleted = (*read == '\n') ? options->crunch_empty : true;
+
 	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
