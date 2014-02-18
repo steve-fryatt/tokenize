@@ -225,7 +225,7 @@ struct parse_keyword_definition {
 	int		abbrev;		/**< The minimum number of characters allowed.		*/
 	unsigned	start;		/**< The token if at the start of a statement.		*/
 	unsigned	elsewhere;	/**< The token if elsewhere in a statement.		*/
-	bool		var_start;	/**< True if the keyword can start a variable.		*/
+	bool		var_start;	/**< True if the keyword can start a variable name.	*/
 };
 
 
