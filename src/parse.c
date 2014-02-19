@@ -39,10 +39,17 @@
 
 #include "library.h"
 
+/* The parse buffer should be longer than the maximum line length, as some
+ * operations may overrun the limit by a few bytes.
+ */
 
-#define MAX_TOKENISED_LINE 1024
+#define PARSE_BUFFER_LEN 1024
+#define MAX_LINE_LENGTH 242
+#define HEAD_LENGTH 4
 
 #define TOKEN_CONST 0x8d
+
+#define parse_output_length(p) ((p) - parse_buffer)
 
 /**
  * List of keyword array indexes. This must match the entries in the
@@ -435,8 +442,8 @@ static enum parse_keyword parse_keyword_index[] = {
 	KWD_NO_MATCH	/**< Z	*/
 };
 
-static char parse_buffer[MAX_TOKENISED_LINE];
-static char library_path[MAX_TOKENISED_LINE];
+static char parse_buffer[PARSE_BUFFER_LEN];
+static char library_path[PARSE_BUFFER_LEN];
 
 
 static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location);
@@ -492,7 +499,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	/* If there's a line number, read and process it. */
 
-	while (*read != '\n' && isdigit(*read))
+	while (parse_output_length(write) < MAX_LINE_LENGTH && *read != '\n' && isdigit(*read))
 		*write++ = *read++;
 
 	if (write > parse_buffer) {
@@ -530,6 +537,11 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	*write++ = 0;		/* Line length placeholder.		*/
 
 	/* Unless we're stripping all whitespace, output the line indent. */
+
+	if (leading_spaces > (MAX_LINE_LENGTH - HEAD_LENGTH)) {
+		fprintf(stderr, "Error: Line too long%s\n", location);
+		return NULL;
+	}
 
 	if (!options->crunch_indent) {
 		real_pos = leading_spaces;
@@ -574,9 +586,12 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			 * no spaces, this won't happen.
 			 */
 
-			if (*read == ':' && (!options->crunch_empty || *(read + 1) != '\n')) {
+			if (*read == ':' && parse_output_length(write) < MAX_LINE_LENGTH && (!options->crunch_empty || *(read + 1) != '\n')) {
 				*write++ = *read++;
 				real_pos++;
+			} else if (parse_output_length(write) >= MAX_LINE_LENGTH) {
+				fprintf(stderr, "Error: Line too long%s\n", location);
+				return NULL;
 			}
 
 			/* If this isn't a comment, and we're due to remove all of the
@@ -603,6 +618,9 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			case PARSE_ERROR_LINE_CONSTANT:
 				error = "Invalid line number constant";
 				break;
+			case PARSE_ERROR_TOO_LONG:
+				error = "Line too long";
+				break;
 			default:
 				error = "Unknown error";
 				break;
@@ -620,7 +638,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	 */
 
 	if (all_deleted == false && status == PARSE_DELETED) {
-		while (((write - parse_buffer) > 4) && (*(write - 1) == ' ' || *(write - 1) == ':'))
+		while (((write - parse_buffer) > HEAD_LENGTH) && (*(write - 1) == ' ' || *(write - 1) == ':'))
 			write--;
 	}
 
@@ -684,7 +702,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	char			*start_pos = *write;		/**< A pointer to the start of the statement.			*/
 
-	while (**read != '\n' && **read != ':') {
+	while (**read != '\n' && **read != ':' && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		/* If the character isn't whitespace, then the line can't be
 		 * entirely whitespace.
 		 */
@@ -859,6 +877,10 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		}
 	}
 
+	if (parse_output_length(*write) > MAX_LINE_LENGTH) {
+		return PARSE_ERROR_TOO_LONG;
+	}
+
 	/* If the statement is only whitespace, and we're removing empty statements,
 	 * flag the statement to be deleted.
 	 */
@@ -1030,7 +1052,7 @@ static bool parse_process_string(char **read, char **write, char *dump)
 
 	*(*write)++ = *(*read)++;
 
-	while (**read != '\n' && !string_closed) {
+	while (**read != '\n' && !string_closed && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		if (**read == '\"' && (**read + 1) != '\"')
 			string_closed = true;
 		else if (**read == '\"' && (**read + 1) == '\"')
@@ -1067,25 +1089,32 @@ static void parse_process_numeric_constant(char **read, char **write)
 	case '&':
 		do {
 			*(*write)++ = *(*read)++;
-		} while ((**read >= '0' && **read <= '9') || (**read >= 'a' && **read <= 'f') || (**read >= 'A' && **read <= 'F'));
+		} while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				((**read >= '0' && **read <= '9') || (**read >= 'a' && **read <= 'f') || (**read >= 'A' && **read <= 'F')));
 		break;
 	case '%':
 		do {
 			*(*write)++ = *(*read)++;
-		} while (**read == '0' || **read == '1');
+		} while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				(**read == '0' || **read == '1'));
 		break;
 	default:
-		while (**read >= '0' && **read <= '9')
+		while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				(**read >= '0') && (**read <= '9'))
 			*(*write)++ = *(*read)++;
-		if (**read == '.')
+		if ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				(**read == '.'))
 			*(*write)++ = *(*read)++;
-		while (**read >= '0' && **read <= '9')
+		while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				(**read >= '0') && (**read <= '9'))
 			*(*write)++ = *(*read)++;
-		if ((**read == 'e' || **read == 'E') && ((*(*read + 1) >= '0' && *(*read + 1) <= '9') || *(*read + 1) == '+' || *(*read + 1) == '-')) {
+		if ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+				((**read == 'e' || **read == 'E') && ((*(*read + 1) >= '0' && *(*read + 1) <= '9') || *(*read + 1) == '+' || *(*read + 1) == '-'))) {
 			*(*write)++ = *(*read)++;
 			do {
 				*(*write)++ = *(*read)++;
-			} while (**read >= '0' && **read <= '9');
+			} while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
+					(**read >= '0') && (**read <= '9'));
 		}
 		break;
 	}
@@ -1141,7 +1170,7 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 
 static void parse_process_fnproc(char **read, char **write)
 {
-	while (parse_is_name_body(**read))
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && parse_is_name_body(**read))
 		*(*write)++ = *(*read)++;
 }
 
@@ -1157,9 +1186,9 @@ static void parse_process_fnproc(char **read, char **write)
 
 static void parse_process_variable(char **read, char **write)
 {
-	while (parse_is_name_body(**read))
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && parse_is_name_body(**read))
 		*(*write)++ = *(*read)++;
-	if (**read == '%' || **read == '$')
+	if ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read == '%' || **read == '$'))
 		*(*write)++ = *(*read)++;
 }
 
@@ -1187,9 +1216,9 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 				if (insert == 0)
 					insert = options->tab_indent;
 
-				for (; insert > 0; insert--)
+				for (; (parse_output_length(*write) < MAX_LINE_LENGTH) && insert > 0; insert--)
 					*(*write)++ = ' ';
-			} else if (!options->crunch_whitespace || first_space) {
+			} else if ((parse_output_length(*write) < MAX_LINE_LENGTH) && (!options->crunch_whitespace || first_space)) {
 				*(*write)++ = ' ';
 			}
 		}
@@ -1212,7 +1241,7 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 
 static void parse_process_to_line_end(char **read, char **write)
 {
-	while (**read != '\n' && **read != '\r' && **read != '\0')
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n') && (**read != '\r') && (**read != '\0'))
 		*(*write)++ = *(*read)++;
 }
 
