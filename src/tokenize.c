@@ -306,7 +306,7 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 			 */
 
 			if (*tokenised != '\0')
-				fwrite(tokenised, sizeof(char), *(tokenised + 3), out);
+				fwrite(tokenised, sizeof(char), *((unsigned char *) tokenised + 3), out);
 		} else {
 			return false;
 		}
