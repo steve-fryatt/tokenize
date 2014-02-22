@@ -86,7 +86,7 @@ ifeq ($(TARGET),riscos)
   CCFLAGS := -mlibscl -mhard-float -static -mthrowback -Wall -O2 -D'RISCOS' -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"' -fno-strict-aliasing -mpoke-function-name
   ZIPFLAGS := -x "*/.svn/*" -r -, -9
 else
-  CCFLAGS := -Wall -O2 -fno-strict-aliasing -D'LINUX' -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"'
+  CCFLAGS := -Wall -g -O2 -fno-strict-aliasing -rdynamic -D'LINUX' -D'BUILD_VERSION="$(VERSION)"' -D'BUILD_DATE="$(BUILD_DATE)"'
   ZIPFLAGS := -x "*/.svn/*" -r -9
 endif
 SRCZIPFLAGS := -x "*/.svn/*" -r -9
@@ -139,7 +139,7 @@ endif
 MANSRC := Source
 MANSPR := ManSprite
 
-OBJS := args.o library.o parse.o string.o tokenize.o
+OBJS := args.o library.o msg.o parse.o string.o tokenize.o
 
 
 # Build everything, but don't package it for release.

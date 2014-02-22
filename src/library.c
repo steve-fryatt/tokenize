@@ -37,6 +37,7 @@
 
 #include "library.h"
 
+#include "msg.h"
 #include "string.h"
 
 #define LIBRARY_MAX_FILENAME 256
@@ -195,7 +196,7 @@ FILE *library_get_file(void)
 		file = fopen(library_file_head->file, "r");
 
 		if (file == NULL) {
-			fprintf(stderr, "Error: Failed to open source file '%s'\n", library_file_head->file);
+			msg_report(MSG_OPEN_FAIL, library_file_head->file);
 			return NULL;
 		}
 

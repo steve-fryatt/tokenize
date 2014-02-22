@@ -38,6 +38,7 @@
 #include "parse.h"
 
 #include "library.h"
+#include "msg.h"
 
 /* The parse buffer should be longer than the maximum line length, as some
  * operations may overrun the limit by a few bytes.
@@ -446,7 +447,7 @@ static char parse_buffer[PARSE_BUFFER_LEN];
 static char library_path[PARSE_BUFFER_LEN];
 
 
-static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location);
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
 static enum parse_keyword parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
 static void parse_process_numeric_constant(char **read, char **write);
@@ -467,11 +468,10 @@ static bool parse_is_name_body(char c);
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
  *			number; updated on exit if a number was found.
- * \param *location	Pointer to source file location information.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number, char *location)
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number)
 {
 	char			*read = line, *write = parse_buffer;
 	int			read_number = -1;
@@ -481,9 +481,6 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
 	bool	all_deleted = true;		/**< True while all the statements on the line have been deleted.	*/
-
-	if (location == NULL)
-		return NULL;
 
 	/* Skip any leading whitespace on the line. */
 
@@ -509,10 +506,10 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		leading_spaces = 0;
 
 		if (read_number < 0 || read_number > PARSE_MAX_LINE_NUMBER) {
-			fprintf(stderr, "Error: Line number %u out of range%s\n", read_number, location);
+			msg_report(MSG_LINE_OUT_OF_RANGE, read_number);
 			return NULL;
 		} else if (read_number <= *line_number) {
-			fprintf(stderr, "Error: Line number %u out of sequence%s\n", read_number, location);
+			msg_report(MSG_LINE_OUT_OF_SEQUENCE, read_number);
 			return NULL;
 		}
 	}
@@ -539,7 +536,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	/* Unless we're stripping all whitespace, output the line indent. */
 
 	if (leading_spaces > (MAX_LINE_LENGTH - HEAD_LENGTH)) {
-		fprintf(stderr, "Error: Line too long%s\n", location);
+		msg_report(MSG_LINE_TOO_LONG);
 		return NULL;
 	}
 
@@ -561,7 +558,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
-		status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start, location);
+		status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
 
 		if (status == PARSE_DELETED) {
 			/* If the statement was deleted, remove any following separator. */
@@ -590,7 +587,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 				*write++ = *read++;
 				real_pos++;
 			} else if (parse_output_length(write) >= MAX_LINE_LENGTH) {
-				fprintf(stderr, "Error: Line too long%s\n", location);
+				msg_report(MSG_LINE_TOO_LONG);
 				return NULL;
 			}
 
@@ -606,27 +603,24 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			 * it with a suitable message and quit.
 			 */
 
-			char	*error;
-
 			switch (status) {
 			case PARSE_ERROR_OPEN_STRING:
-				error = "Unterminated string";
+				msg_report(MSG_BAD_STRING);
 				break;
 			case PARSE_ERROR_DELETED_STATEMENT:
-				error = "Misformed deleted statement";
+				msg_report(MSG_BAD_DELETE);
 				break;
 			case PARSE_ERROR_LINE_CONSTANT:
-				error = "Invalid line number constant";
+				msg_report(MSG_BAD_LINE_CONST);
 				break;
 			case PARSE_ERROR_TOO_LONG:
-				error = "Line too long";
+				msg_report(MSG_LINE_TOO_LONG);
 				break;
 			default:
-				error = "Unknown error";
+				msg_report(MSG_UNKNOWN_ERROR);
 				break;
 			}
 
-			fprintf(stderr, "Error: %s at%s\n", error, location);
 			return NULL;
 		}
 
@@ -659,7 +653,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		} else {
 			*line_number += options->line_increment;
 			if (*line_number > PARSE_MAX_LINE_NUMBER) {
-				fprintf(stderr, "Error: AUTO line number too large%s\n", location);
+				msg_report(MSG_AUTO_OUT_OF_RANGE);
 				return NULL;
 			}
 		}
@@ -684,11 +678,10 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
  * \param *options	The number of spaces used for a tab (0 to disable).
  * \param *assembler	Pointer to a variable indicating if we're in an assember block.
  * \param line_start	True if this is the first statement on a line.
- * \param *location	Pointer to a string giving the file location.
  * \return		The status of the parsed statement.
  */
 
-static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start, char *location)
+static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start)
 {
 	enum parse_status	status = PARSE_WHITESPACE;
 
@@ -744,7 +737,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				clean_to_end = true;
 				status = PARSE_DELETED;
 				if (options->verbose_output)
-					printf("Queue 'LIBRARY \"%s\"' for linking%s\n", library_path, location);
+					msg_report(MSG_QUEUE_LIB, library_path);
 			}
 
 			statement_start = false;
@@ -810,7 +803,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				if (statement_start)
 					library_path_due = true;
 				else
-					fprintf(stderr, "Warning: Unisolated LIBRARY not linked%s\n", location);
+					msg_report(MSG_SKIPPED_LIB);
 				break;
 			default:
 				break;
@@ -832,7 +825,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			parse_process_variable(read, write);
 
 			if (library_path_due && options->link_libraries)
-				fprintf(stderr, "Warning: Variable LIBRARY not linked%s\n", location);
+				msg_report(MSG_VAR_LIB);
 
 			statement_start = false;
 			line_start = false;

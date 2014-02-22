@@ -82,11 +82,10 @@ enum parse_status {
  *			assember section and FALSE otherwise; updated on exit.
  * \param *line_number	Pointer to a variable to hold the proposed next line
  *			number; updated on exit if a number was found.
- * \param *location	Pointer to source file location information.
  * \return		Pointer to the tokenised line, or NULL on error.
  */
 
-char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number, char *location);
+char *parse_process_line(char *line, struct parse_options *options, bool *assembler, int *line_number);
 
 #endif
 

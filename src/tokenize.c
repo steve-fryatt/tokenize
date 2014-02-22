@@ -47,6 +47,7 @@
 #include "oslib/osfile.h"
 #endif
 
+#include "msg.h"
 
 #define MAX_INPUT_LINE_LENGTH 1024
 #define MAX_LOCATION_TEXT 256
@@ -280,7 +281,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 
 bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
 {
-	char		line[MAX_INPUT_LINE_LENGTH], location[MAX_LOCATION_TEXT], *tokenised, *file;
+	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file;
 	bool		assembler = false;
 	unsigned	input_line = 0;
 
@@ -295,9 +296,9 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 		printf("Processing source file '%s'\n", file);
 
 	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
-		snprintf(location, MAX_LOCATION_TEXT, " at line %u of '%s'", ++input_line, file);
+		msg_set_location(++input_line, file);
 
-		tokenised = parse_process_line(line, options, &assembler, line_number, location);
+		tokenised = parse_process_line(line, options, &assembler, line_number);
 		if (tokenised != NULL) {
 			/* The line tokeniser requests a line be deleted (ie. not
 			 * written to the output) by setting the leading \r to be
