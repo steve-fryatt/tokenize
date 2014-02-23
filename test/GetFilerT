@@ -1,9 +1,9 @@
-REM !RunImage for GetFiler
-REM
-REM Save Filer window positions.
-REM (c) Stephen Fryatt, 2001
-REM
-REM 1.01 (8 September 2002)
+1REM !RunImage for GetFiler
+2REM
+3REM Save Filer window positions.
+4REM (c) Stephen Fryatt, 2001
+5REM
+6REM 1.01 (8 September 2002)
 :
 ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
 :

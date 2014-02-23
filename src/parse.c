@@ -917,7 +917,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z')) {
+		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read == '_') || (**read == '`')) {
 			/* Handle variable names */
 			parse_process_variable(read, write);
 
