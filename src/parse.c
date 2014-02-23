@@ -482,6 +482,8 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded  keywords.	*/
 	bool	all_deleted = true;		/**< True while all the statements on the line have been deleted.	*/
+	bool	statements = 0;			/**< The number of statements found on the line.			*/
+	bool	line_empty = false;		/**< Set to true if the line has nothing after the line number.		*/
 
 	/* Skip any leading whitespace on the line. */
 
@@ -526,6 +528,8 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		read++;
 	}
 
+	line_empty = (leading_spaces == 0) ? true : false;
+
 	/* Output the line start (CR, LineNo HI, LineNo LO, Length). */
 
 	*write++ = 0x0d;
@@ -553,12 +557,13 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	 * delete a statement.
 	 */
 
-	all_deleted = (*read == '\n') ? (options->crunch_empty || options->crunch_empty_lines) : true;
+	all_deleted = (*read == '\n') ? (options->crunch_empty || (options->crunch_empty_lines && line_empty)) : true;
 
 	/* Process statements from the line, sending them to the output buffer. */
 
 	while (*read != '\n') {
 		status = parse_process_statement(&read, &write, &real_pos, options, assembler, line_start);
+		statements++;
 
 		if (status == PARSE_DELETED) {
 			/* If the statement was deleted, remove any following separator. */
@@ -627,12 +632,29 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		line_start = false;
 	}
 
-	/* If the last statement was deleted, clean back to remove any trailing
-	 * whitespace and colons that could have been orphaned.
-	 */
+	/* Perform various line ending trimmings. */
 
 	if (all_deleted == false && status == PARSE_DELETED) {
+		/* If the last statement was deleted, clean back to remove any
+		 * trailing whitespace and colons that could have been orphaned.
+		 */
+
 		while (((write - parse_buffer) > HEAD_LENGTH) && (*(write - 1) == ' ' || *(write - 1) == ':'))
+			write--;
+	} else if (options->crunch_trailing == true && statements >= 1) {
+		/* If trailing spaces are being trimmed and there's been some
+		 * non-whitespace on the line, trim *all* the trailing spaces.
+		 */
+	
+		while (((write - parse_buffer) > HEAD_LENGTH) && (*(write - 1) == ' '))
+			write--;
+	} else if (options->crunch_trailing == true) {
+		/* Otherwise, if the line is just whitespace, trim back to leave
+		 * just a single space so that the line gets output. This gives
+		 * compatibility with TEXTLOAD.
+		 */
+	
+		while (((write - parse_buffer) > (HEAD_LENGTH + 1)) && (*(write - 1) == ' '))
 			write--;
 	}
 

@@ -53,6 +53,7 @@ struct parse_options {
 	bool		crunch_empty;		/**< True to remove all empty statements.			*/
 	bool		crunch_empty_lines;	/**< True to remove completely empty lines.			*/
 	bool		crunch_indent;		/**< True to remove all leading indent spaces.			*/
+	bool		crunch_trailing;	/**< True to remove all trailing whitespace, TEXTLOAD-style.	*/
 	bool		crunch_whitespace;	/**< True to reduce contiguous whitespace to a single space.	*/
 	bool		crunch_all_whitespace;	/**< True to remove all whitespace.				*/
 };

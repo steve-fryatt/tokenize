@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 	parse_options.crunch_empty = false;
 	parse_options.crunch_empty_lines = false;
 	parse_options.crunch_indent = false;
+	parse_options.crunch_trailing = false;
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
@@ -108,6 +109,10 @@ int main(int argc, char *argv[])
 						parse_options.crunch_rems = true;
 					case 'r':
 						parse_options.crunch_body_rems = true;
+						break;
+					case 'T':
+					case 't':
+						parse_options.crunch_trailing = true;
 						break;
 					case 'W':
 						parse_options.crunch_all_whitespace = true;
@@ -207,6 +212,7 @@ int main(int argc, char *argv[])
 		printf("                      I|i - Remove opening indents.\n");
 		printf("                      L|l - Remove empty lines (implied by E).\n");
 		printf("                      R|r - Remove all|non-opening comments.\n");
+		printf("                      T|t - Remove trailing whitespace (implied by W).\n");
 		printf("                      W|w - Remove|reduce in-line whitespace.\n");
 		printf(" -help               Produce this help information.\n");
 		printf(" -increment <n>      Set the AUTO line number increment to <n>.\n");
