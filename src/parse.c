@@ -455,6 +455,7 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
+static void parse_process_to_statement_end(char **read, char **write);
 static void parse_process_to_line_end(char **read, char **write);
 static bool parse_is_name_body(char c);
 
@@ -684,15 +685,16 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 {
 	enum parse_status	status = PARSE_WHITESPACE;
 
-	bool			statement_start = true;		/**< True while we're at the start of a statement.		*/
-	bool			constant_due = false;		/**< True if a line number constant could be coming up.		*/
-	bool			library_path_due = false;	/**< True if we're expecting a library path.			*/
-	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.	*/
+	bool			statement_start = true;		/**< True while we're at the start of a statement.			*/
+	bool			constant_due = false;		/**< True if a line number constant could be coming up.			*/
+	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
+	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
 
-	int			extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.		*/
-	enum parse_keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.		*/
+	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
+	int			extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.			*/
+	enum parse_keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.			*/
 
-	char			*start_pos = *write;		/**< A pointer to the start of the statement.			*/
+	char			*start_pos = *write;		/**< A pointer to the start of the statement.				*/
 
 	while (**read != '\n' && **read != ':' && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		/* If the character isn't whitespace, then the line can't be
@@ -704,15 +706,45 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 		/* Now start to work out what the next character might be. */
 
-		if (*assembler == true) {
-			/* Assembler is a special case. We just copy text across
-			 * to the buffer until we find a closing delimiter.
-			 */
-
-			if (**read == ']')
-				*assembler = false;
-
+		if (*assembler == true && **read == '[') {
+			/* Open a matched [...] in assembler. */
+			bracket_count++;
 			*(*write)++ = *(*read)++;
+
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
+			library_path_due = false;
+			clean_to_end = false;
+		} else if (*assembler == true && **read == ']' && bracket_count > 0) {
+			/* Close a matched [...] in assembler. */
+			bracket_count--;
+			*(*write)++ = *(*read)++;
+
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
+			library_path_due = false;
+			clean_to_end = false;
+		} else if (*assembler == true && **read == ']') {
+			/* An unmatched ] in a statememt terminates the assember. */
+			*assembler = false;
+			*(*write)++ = *(*read)++;
+
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
+			library_path_due = false;
+			clean_to_end = false;
+		} else if (*assembler == true && **read == ';') {
+			/* This is an assembler comment. */
+			parse_process_to_statement_end(read, write);
+
+			statement_start = false;
+			line_start = false;
+			constant_due = false;
+			library_path_due = false;
+			clean_to_end = false;
 		} else if (**read == '[') {
 			/* This is the start of an assembler block. */
 
@@ -1219,6 +1251,22 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 
 		first_space = false;
 	}
+}
+
+
+/**
+ * Process a "run to end" object, such as an assembler comment, copying bytes
+ * from read to write until the end of the statement is reached. The two
+ * pointers are updated on return.
+ *
+ * \param **read	Pointer to the current read pointer.
+ * \param **write	Pointer to the current write pointer.
+ */
+
+static void parse_process_to_statement_end(char **read, char **write)
+{
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n') && (**read != '\r') && (**read != '\0') && (**read != ':'))
+		*(*write)++ = *(*read)++;
 }
 
 
