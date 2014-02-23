@@ -45,7 +45,7 @@
  */
 
 #define PARSE_BUFFER_LEN 1024
-#define MAX_LINE_LENGTH 242
+#define MAX_LINE_LENGTH 256
 #define HEAD_LENGTH 4
 
 #define TOKEN_CONST 0x8d
