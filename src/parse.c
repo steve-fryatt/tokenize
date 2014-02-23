@@ -723,6 +723,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	char			*start_pos = *write;		/**< A pointer to the start of the statement.				*/
 
+	if (*assembler == true) {
+		statement_left = false;
+		statement_left_start = false;
+	}
+
 	while (**read != '\n' && **read != ':' && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		/* If the character isn't whitespace, then the line can't be
 		 * entirely whitespace.
@@ -784,6 +789,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 
 			statement_start = false;
+			statement_left = false;
 			statement_left_start = false;
 			line_start = false;
 			constant_due = false;
