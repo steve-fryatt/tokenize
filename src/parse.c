@@ -761,15 +761,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (*assembler == true && **read == ';') {
-			/* This is an assembler comment. */
-			parse_process_to_statement_end(read, write);
-
-			statement_start = false;
-			line_start = false;
-			constant_due = false;
-			library_path_due = false;
-			clean_to_end = false;
 		} else if (**read == '[') {
 			/* This is the start of an assembler block. */
 
