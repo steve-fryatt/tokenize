@@ -795,9 +795,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '\"' && !assembler_comment) {
+		} else if (**read == '\"') {
 			/* Copy strings as a lump, but not from assembler comments. */
-			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL))
+			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL) && !assembler_comment)
 				return PARSE_ERROR_OPEN_STRING;
 
 			clean_to_end = false;
@@ -907,7 +907,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			statement_start = false;
 			line_start = false;
-		} else if ((**read >= '0' && **read <= '9') && !assembler_comment && constant_due) {
+		} else if ((**read >= '0' && **read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
 			if (!parse_process_binary_constant(read, write, &extra_spaces))
 				return PARSE_ERROR_LINE_CONSTANT;
@@ -938,7 +938,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '*' && statement_left_start && !assembler_comment) {
+		} else if (**read == '*' && statement_left_start) {
 			/* It's a star command, so run out to the end of the line. */
 
 			parse_process_to_line_end(read, write);
