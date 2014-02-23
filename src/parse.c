@@ -715,6 +715,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool			constant_due = false;		/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
+	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
 
 	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
 	int			extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.			*/
@@ -732,7 +733,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 		/* Now start to work out what the next character might be. */
 
-		if (*assembler == true && **read == '[') {
+		if (*assembler == true && !assembler_comment && **read == '[') {
 			/* Open a matched [...] in assembler. */
 			bracket_count++;
 			*(*write)++ = *(*read)++;
@@ -743,7 +744,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (*assembler == true && **read == ']' && bracket_count > 0) {
+		} else if (*assembler == true && !assembler_comment && **read == ']' && bracket_count > 0) {
 			/* Close a matched [...] in assembler. */
 			bracket_count--;
 			*(*write)++ = *(*read)++;
@@ -754,7 +755,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (*assembler == true && **read == ']') {
+		} else if (*assembler == true && !assembler_comment && **read == ']') {
 			/* An unmatched ] in a statememt terminates the assember. */
 			*assembler = false;
 			*(*write)++ = *(*read)++;
@@ -765,7 +766,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '[') {
+		} else if (*assembler == true && !assembler_comment && **read == ';') {
+			/* An assembler comment, so parsing needs to relax. */
+			assembler_comment = true;
+			*(*write)++ = *(*read)++;
+
+			statement_start = false;
+			statement_left_start = false;
+			line_start = false;
+			constant_due = false;
+			library_path_due = false;
+			clean_to_end = false;
+		} else if (**read == '[' && *assembler == false) {
 			/* This is the start of an assembler block. */
 
 			*assembler = true;
@@ -777,8 +789,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '\"') {
-			/* Copy strings as a lump. */
+		} else if (**read == '\"' && !assembler_comment) {
+			/* Copy strings as a lump, but not from assembler comments. */
 			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL))
 				return PARSE_ERROR_OPEN_STRING;
 
@@ -889,7 +901,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			statement_start = false;
 			line_start = false;
-		} else if ((**read >= '0' && **read <= '9') && constant_due) {
+		} else if ((**read >= '0' && **read <= '9') && !assembler_comment && constant_due) {
 			/* Handle binary line number constants. */
 			if (!parse_process_binary_constant(read, write, &extra_spaces))
 				return PARSE_ERROR_LINE_CONSTANT;
@@ -920,7 +932,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '*' && statement_left_start) {
+		} else if (**read == '*' && statement_left_start && !assembler_comment) {
 			/* It's a star command, so run out to the end of the line. */
 
 			parse_process_to_line_end(read, write);
