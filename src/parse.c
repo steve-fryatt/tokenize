@@ -553,7 +553,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	 * delete a statement.
 	 */
 
-	all_deleted = (*read == '\n') ? options->crunch_empty : true;
+	all_deleted = (*read == '\n') ? (options->crunch_empty || options->crunch_empty_lines) : true;
 
 	/* Process statements from the line, sending them to the output buffer. */
 

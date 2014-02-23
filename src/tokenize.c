@@ -74,6 +74,7 @@ int main(int argc, char *argv[])
 	parse_options.crunch_body_rems = false;
 	parse_options.crunch_rems = false;
 	parse_options.crunch_empty = false;
+	parse_options.crunch_empty_lines = false;
 	parse_options.crunch_indent = false;
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
@@ -98,6 +99,10 @@ int main(int argc, char *argv[])
 					case 'I':
 					case 'i':
 						parse_options.crunch_indent = true;
+						break;
+					case 'L':
+					case 'l':
+						parse_options.crunch_empty_lines = true;
 						break;
 					case 'R':
 						parse_options.crunch_rems = true;
@@ -200,6 +205,7 @@ int main(int argc, char *argv[])
 		printf(" -crunch [EIRW]      Control application of output CRUNCHing.\n");
 		printf("                      E|e - Remove empty statements.\n");
 		printf("                      I|i - Remove opening indents.\n");
+		printf("                      L|l - Remove empty lines (implied by E).\n");
 		printf("                      R|r - Remove all|non-opening comments.\n");
 		printf("                      W|w - Remove|reduce in-line whitespace.\n");
 		printf(" -help               Produce this help information.\n");
