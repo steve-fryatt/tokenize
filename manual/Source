@@ -194,6 +194,10 @@ Setting <param>E</param> will cause empty statements to be removed from the file
 The <param>I</param> option will cause all start-of-line indentation to be removed (tabs and spaces) so that all lines start in the first column.
 </definition>
 
+<definition target="L">
+Setting <param>L</param> will cause completely empty lines to be removed from the file; any whitespace will cause them to be retained. This gives compatibility with the behaviour of TEXTLOAD. The <param>E</param> parameter includes the behaviour of <param>L</param>.
+</definition>
+
 <definition target="R">
 The <param>r</param> and <param>R</param> options allow comments to be stripped from the source code; if used in conjunction with <param>E</param> then any lines which end up being empty will get removed. An upper case <param>R</param> will strip all comments; a lower case <param>r</param> will only strip comments after the first contiguous block of lines containing only <code>REM</code> statements at the head of the first file. In other words
 
@@ -227,6 +231,10 @@ PRINT "Hello World!"
 being output to the tokenized BASIC file given a setting of <command>-crunch er</command>.
 </definition>
 
+<definition target="T">
+Setting <param>T</param> will cause trailing spaces to be stripped from lines, and lines only containing whitespace to be reduced to a single space. This gives compatibility with the behaviour of TEXTLOAD. The <param>E</param> parameter includes the behaviour of <param>T</param>.
+</definition>
+
 <definition target="W">
 The <param>w</param> and <param>W</param> options allow whitespace to be removed from within lines. Using the lower case <param>w</param> results in all blocks of contiguous whitespace (tabs and spaces) being reduced to a single space, while the upper case <param>W</param> will cause it to be removed completely.
 </definition>
@@ -255,28 +263,12 @@ A source file &ndash; either specified on the command line or via a linked <code
 A line number given to a statement such as <code>GOTO</code> or <code>RESTORE</code> is too large. BASIC can only handle numbers up to 65535.
 </definition>
 
-<definition target="Line number &lt;n&gt; out of sequence">
-A line number explicitly specified in a source file is out of sequence, and would be less than or equal to the number of the line before. This could be due to a clear error such as
-
-<codeblock>
-20 REM This will give an error.
-10 PRINT "Hello World!"
-</codeblock>
-
-or it could be more subtle. In this example
-
-<codeblock>
-10 REM >Example
-   REM
-   REM This will give an error.
-20 PRINT "Hello World!"
-</codeblock>
-
-the default <param>-increment</param> of 10 will result in the two intermediate lines being given numbers of 20 and 30. By the time the <code>PRINT</code> statement is reached, the line 20 would need to be 41 or greater.
-</definition>
-
 <definition target="Line number &lt;n&gt; out of range">
 A line number explicitly specified in a source file is too large or too small. BASIC can only handle numbers between 0 and 65279.
+</definition>
+
+<definition target="Line too long">
+A line can only be 251 bytes long once tokenized.
 </definition>
 
 <definition target="Misformed deleted statement">
@@ -297,6 +289,26 @@ String constants must be enclosed by double quotes (&quot;...&quot;), and a pair
 <subhead title="Warnings">
 
 Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well not prevent the tokenized program from working.
+
+<definition target="Line number &lt;n&gt; out of sequence">
+A line number explicitly specified in a source file is out of sequence, and would be less than or equal to the number of the line before. This could be due to a clear error such as
+
+<codeblock>
+20 REM This will give an error.
+10 PRINT "Hello World!"
+</codeblock>
+
+or it could be more subtle. In this example
+
+<codeblock>
+10 REM >Example
+   REM
+   REM This will give an error.
+20 PRINT "Hello World!"
+</codeblock>
+
+the default <param>-increment</param> of 10 will result in the two intermediate lines being given numbers of 20 and 30. By the time the <code>PRINT</code> statement is reached, the line 20 would need to be 41 or greater.
+</definition>
 
 <definition target="Unisolated LIBRARY not linked">
 If the <param>-link</param> option is in force then in order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite>i needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
