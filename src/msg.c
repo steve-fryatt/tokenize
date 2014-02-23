@@ -58,7 +58,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Failed to open source file '%s'",	false	},
 	{MSG_ERROR,	"Line number %u out of range",		true	},
 	{MSG_ERROR,	"AUTO line number too large",		true	},
-	{MSG_ERROR,	"Line number %u out of sequence",	true	},
+	{MSG_WARNING,	"Line number %u out of sequence",	true	},
 	{MSG_ERROR,	"Line too long",			true	},
 	{MSG_ERROR,	"Invalid line number constant",		true	},
 	{MSG_ERROR,	"Unterminated string",			true	},

@@ -510,7 +510,6 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			return NULL;
 		} else if (read_number <= *line_number) {
 			msg_report(MSG_LINE_OUT_OF_SEQUENCE, read_number);
-			return NULL;
 		}
 	}
 
