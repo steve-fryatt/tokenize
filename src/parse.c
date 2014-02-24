@@ -711,7 +711,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	bool			statement_start = true;		/**< True while we're at the start of a statement.			*/
 	bool			statement_left = true;		/**< True while we're in "left-side" mode for tokens.			*/
-	bool			statement_left_start = true;	/**< True while we're at the start of a "left-side" block.		*/
 	bool			constant_due = false;		/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
@@ -722,11 +721,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	enum parse_keyword	token = KWD_NO_MATCH;		/**< Storage for any keyword tokens that we look up.			*/
 
 	char			*start_pos = *write;		/**< A pointer to the start of the statement.				*/
-
-	if (*assembler == true) {
-		statement_left = false;
-		statement_left_start = false;
-	}
 
 	while (**read != '\n' && **read != ':' && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		/* If the character isn't whitespace, then the line can't be
@@ -744,7 +738,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
@@ -755,7 +749,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
@@ -766,7 +760,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
@@ -777,7 +771,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			*(*write)++ = *(*read)++;
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
@@ -790,7 +784,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			statement_start = false;
 			statement_left = false;
-			statement_left_start = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
@@ -811,21 +804,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			}
 
 			statement_start = false;
-			statement_left_start = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-		} else if (**read == '=') {
-			/* Handle transfer to the right-hand side of expressions. */
-			statement_left = false;
-			*(*write)++ = *(*read)++;
-
-			statement_start = false;
-			statement_left_start = false;
-			line_start = false;
-			constant_due = false;
-			library_path_due = false;
-			clean_to_end = false;
 		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != KWD_NO_MATCH) {
 			/* Handle keywords */
 			unsigned bytes;
@@ -861,12 +842,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			/* Move between left- and right-hand sides of expressions. */
 
-			if (parse_keywords[token].transfer_left) {
+			if (parse_keywords[token].transfer_left)
 				statement_left = true;
-				statement_left_start = true;
-			} else {
-				statement_left_start = false;
-			}
 
 			if (parse_keywords[token].transfer_right)
 				statement_left = false;
@@ -913,7 +890,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				return PARSE_ERROR_LINE_CONSTANT;
 
 			statement_start = false;
-			statement_left_start = false;
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
@@ -925,7 +901,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				msg_report(MSG_VAR_LIB);
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
@@ -934,11 +910,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			parse_process_numeric_constant(read, write);
 
 			statement_start = false;
-			statement_left_start = false;
+			statement_left = false;
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
-		} else if (**read == '*' && statement_left_start) {
+		} else if (**read == '*' && statement_left) {
 			/* It's a star command, so run out to the end of the line. */
 
 			parse_process_to_line_end(read, write);
@@ -951,7 +927,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			/* Handle eveything else. */
 
 			statement_start = false;
-			statement_left_start = false;
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
@@ -961,8 +936,10 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * doesn't end up in this section.
 			 */
 
-			if (!(**read == ','))
+			if (!(**read == ',')) {
 				constant_due = false;
+				statement_left = false;
+			}
 
 			/* Copy the character to the output. */
 
