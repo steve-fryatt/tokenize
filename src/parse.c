@@ -869,6 +869,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				} else {
 					status = PARSE_COMMENT;
 				}
+			case KWD_EDIT:
 			case KWD_DATA:
 				parse_process_to_line_end(read, write);
 				break;
