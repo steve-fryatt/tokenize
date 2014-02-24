@@ -851,11 +851,16 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			/* Handle any special actions on keywords. */
 
 			switch (token) {
+			case KWD_AUTO:
+			case KWD_DELETE:
 			case KWD_ELSE:
 			case KWD_GOSUB:
 			case KWD_GOTO:
+			case KWD_LIST:
+			case KWD_RENUMBER:
 			case KWD_RESTORE:
 			case KWD_THEN:
+			case KWD_TRACE:
 				constant_due = true;
 				break;
 			case KWD_FN:
