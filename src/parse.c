@@ -457,7 +457,6 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
-static void parse_process_to_statement_end(char **read, char **write);
 static void parse_process_to_line_end(char **read, char **write);
 static bool parse_is_name_body(char c);
 
@@ -1303,22 +1302,6 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 
 		first_space = false;
 	}
-}
-
-
-/**
- * Process a "run to end" object, such as an assembler comment, copying bytes
- * from read to write until the end of the statement is reached. The two
- * pointers are updated on return.
- *
- * \param **read	Pointer to the current read pointer.
- * \param **write	Pointer to the current write pointer.
- */
-
-static void parse_process_to_statement_end(char **read, char **write)
-{
-	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n') && (**read != '\r') && (**read != '\0') && (**read != ':'))
-		*(*write)++ = *(*read)++;
 }
 
 
