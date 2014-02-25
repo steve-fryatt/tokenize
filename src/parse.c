@@ -895,7 +895,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if ((**read >= '0' && **read <= '9') && constant_due) {
 			/* Handle binary line number constants. */
 			if (!parse_process_binary_constant(read, write, &extra_spaces))
-				return PARSE_ERROR_LINE_CONSTANT;
+				parse_process_numeric_constant(read, write);
 
 			statement_start = false;
 			line_start = false;
@@ -1215,7 +1215,7 @@ static void parse_process_numeric_constant(char **read, char **write)
 
 static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces)
 {
-	char		number[256], *ptr;
+	char		number[256], *ptr, *start = *read;
 	unsigned	line = 0;
 
 	ptr = number;
@@ -1225,8 +1225,10 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 	*ptr = '\0';
 
 	line = atoi(number);
-	if (line > 0xffff)
+	if (line > PARSE_MAX_LINE_NUMBER) {
+		*read = start;
 		return false;
+	}
 
 	*(*write)++ = TOKEN_CONST;
 	*(*write)++ = (((line & 0xc0) >> 2) | ((line & 0xc000) >> 12)) ^ 0x54;
