@@ -710,7 +710,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	bool			statement_start = true;		/**< True while we're at the start of a statement.			*/
 	bool			statement_left = true;		/**< True while we're in "left-side" mode for tokens.			*/
-	bool			constant_due = false;		/**< True if a line number constant could be coming up.			*/
+	bool			constant_due = line_start;	/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
 	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
@@ -835,17 +835,20 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				extra_spaces--;
 			}
 
-			constant_due = false;
 			library_path_due = false;
 			clean_to_end = false;
 
 			/* Move between left- and right-hand sides of expressions. */
 
-			if (parse_keywords[token].transfer_left)
+			if (parse_keywords[token].transfer_left) {
 				statement_left = true;
+				constant_due = false;
+			}
 
-			if (parse_keywords[token].transfer_right)
+			if (parse_keywords[token].transfer_right) {
 				statement_left = false;
+				constant_due = false;
+			}
 
 			/* Handle any special actions on keywords. */
 
@@ -906,6 +909,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				msg_report(MSG_VAR_LIB);
 
 			statement_start = false;
+			constant_due = false;
 			statement_left = false;
 			line_start = false;
 			library_path_due = false;
@@ -915,6 +919,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			parse_process_numeric_constant(read, write);
 
 			statement_start = false;
+			constant_due = false;
 			statement_left = false;
 			line_start = false;
 			library_path_due = false;
