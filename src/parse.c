@@ -271,7 +271,7 @@ static struct parse_keyword_definition parse_keywords[] = {
 	{"COLOR",	1,	0xfb,	0xfb,	false,	false,	true	},
 	{"COLOUR",	1,	0xfb,	0xfb,	false,	false,	true	},
 	{"COS",		3,	0x9b,	0x9b,	false,	false,	false	},
-	{"COUNT",	3,	0x9c,	0x96,	true,	false,	false	},
+	{"COUNT",	3,	0x9c,	0x9c,	true,	false,	false	},
 	{"CRUNCH",	2,	0x90c7,	0x90c7,	false,	false,	true	},
 	{"DATA",	1,	0xdc,	0xdc,	false,	false,	false	},
 	{"DEF",		3,	0xdd,	0xdd,	false,	false,	false	},
