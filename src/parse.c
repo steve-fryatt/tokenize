@@ -893,7 +893,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 		} else if ((**read >= '0' && **read <= '9') && constant_due) {
-			/* Handle binary line number constants. */
+			/* Handle binary line number constants, falling back
+			 * to textual ones if the value is out of range. */
 			if (!parse_process_binary_constant(read, write, &extra_spaces))
 				parse_process_numeric_constant(read, write);
 
