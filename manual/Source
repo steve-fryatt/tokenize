@@ -259,10 +259,6 @@ Automatic line numbering applied via the <param>-start</param> and <param>-incre
 A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive &ndash; references that work on RISC&nbsp;OS&rsquo;s case-insensitive Filecore systems might fail on other platform&rsquo;s case-sensitive filesystems.
 </definition>
 
-<definition target="Invalid line number constant">
-A line number given to a statement such as <code>GOTO</code> or <code>RESTORE</code> is too large. BASIC can only handle numbers up to 65535.
-</definition>
-
 <definition target="Line number &lt;n&gt; out of range">
 A line number explicitly specified in a source file is too large or too small. BASIC can only handle numbers between 0 and 65279.
 </definition>
