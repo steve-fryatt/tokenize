@@ -452,7 +452,7 @@ static char library_path[PARSE_BUFFER_LEN];
 static enum parse_status parse_process_statement(char **read, char **write, int *real_pos, struct parse_options *options, bool *assembler, bool line_start);
 static enum parse_keyword parse_match_token(char **buffer);
 static bool parse_process_string(char **read, char **write, char *dump);
-static void parse_process_numeric_constant(char **read, char **write);
+static bool parse_process_numeric_constant(char **read, char **write);
 static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces);
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
@@ -917,11 +917,12 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			clean_to_end = false;
 		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
-			parse_process_numeric_constant(read, write);
+			if (parse_process_numeric_constant(read, write)) {
+				constant_due = false;
+				statement_left = false;
+			}
 
 			statement_start = false;
-			constant_due = false;
-			statement_left = false;
 			line_start = false;
 			library_path_due = false;
 			clean_to_end = false;
@@ -1162,16 +1163,21 @@ static bool parse_process_string(char **read, char **write, char *dump)
  *
  * \param **read	Pointer to the current read pointer.
  * \param **write	Pointer to the current write pointer.
+ * \return		True if the value wasn't hex; false if it was.
  */
 
-static void parse_process_numeric_constant(char **read, char **write)
+static bool parse_process_numeric_constant(char **read, char **write)
 {
+	bool non_hex = true;
+
 	switch (**read) {
 	case '&':
 		do {
 			*(*write)++ = *(*read)++;
 		} while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
 				((**read >= '0' && **read <= '9') || (**read >= 'a' && **read <= 'f') || (**read >= 'A' && **read <= 'F')));
+		
+		non_hex = false;
 		break;
 	case '%':
 		do {
@@ -1199,6 +1205,8 @@ static void parse_process_numeric_constant(char **read, char **write)
 		}
 		break;
 	}
+
+	return non_hex;
 }
 
 
