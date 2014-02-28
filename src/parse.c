@@ -883,7 +883,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_LIBRARY:
 				if (statement_start)
 					library_path_due = true;
-				else
+				else if (options->link_libraries)
 					msg_report(MSG_SKIPPED_LIB);
 				break;
 			default:
