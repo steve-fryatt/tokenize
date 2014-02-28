@@ -117,6 +117,9 @@ void msg_report(enum msg_type type, ...)
 	case MSG_ERROR:
 		level = "Error";
 		break;
+	default:
+		level = "Message:";
+		break;
 	}
 
 	if (msg_messages[type].show_location)
