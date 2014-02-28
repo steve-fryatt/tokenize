@@ -58,7 +58,7 @@
  */
 
 enum parse_keyword {
-	KWD_NO_MATCH = -1,	/**< Indicates that no keyword macth is available.		*/
+	KWD_NO_MATCH = -1,	/**< Indicates that no keyword match is available.		*/
 	KWD_ABS = 0,		/**< Keywords start at array index 0 and go alphabetically.	*/
 	KWD_ACS,
 	KWD_ADVAL,
@@ -646,7 +646,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		/* If trailing spaces are being trimmed and there's been some
 		 * non-whitespace on the line, trim *all* the trailing spaces.
 		 */
-	
+
 		while (((write - parse_buffer) > HEAD_LENGTH) && (*(write - 1) == ' '))
 			write--;
 	} else if (options->crunch_trailing == true) {
@@ -654,7 +654,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 		 * just a single space so that the line gets output. This gives
 		 * compatibility with TEXTLOAD.
 		 */
-	
+
 		while (((write - parse_buffer) > (HEAD_LENGTH + 1)) && (*(write - 1) == ' '))
 			write--;
 	}
@@ -1176,7 +1176,7 @@ static bool parse_process_numeric_constant(char **read, char **write)
 			*(*write)++ = *(*read)++;
 		} while ((parse_output_length(*write) < MAX_LINE_LENGTH) &&
 				((**read >= '0' && **read <= '9') || (**read >= 'a' && **read <= 'f') || (**read >= 'A' && **read <= 'F')));
-		
+
 		non_hex = false;
 		break;
 	case '%':
