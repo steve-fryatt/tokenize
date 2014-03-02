@@ -78,14 +78,17 @@ void library_add_path_combined(char *combined)
 	name = strdup(combined);
 	if (name == NULL)
 		return;
-	
+
 	path = strchr(name, ':');
-	if (path == NULL)
+	if (path == NULL) {
+		free(name);
 		return;
-	
+	}
+
 	*path++ = '\0';
 
 	library_add_path(name, path);
+	free(name);
 }
 
 
