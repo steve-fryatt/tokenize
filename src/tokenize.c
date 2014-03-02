@@ -40,6 +40,7 @@
 #include "args.h"
 #include "library.h"
 #include "parse.h"
+#include "variable.h"
 
 /* OSLib source headers. */
 
@@ -80,9 +81,13 @@ int main(int argc, char *argv[])
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
+	/* Initialise the variable handler. */
+
+	variable_initialise();
+
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,link/KS,tab/IK,crunch/K,verbose/S,help/S");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,tab/IK,crunch/K,verbose/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -90,7 +95,7 @@ int main(int argc, char *argv[])
 		if (strcmp(options->name, "crunch") == 0) {
 			if (options->data != NULL) {
 				char *mode = options->data->value.string;
-				
+
 				while (mode != NULL && *mode != '\0') {
 					switch (*mode++) {
 					case 'E':
@@ -122,6 +127,18 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+		} else if (strcmp(options->name, "define") == 0) {
+			if (options->data != NULL) {
+				option_data = options->data;
+
+				while (option_data != NULL) {
+					if (option_data->value.string != NULL)
+						variable_add_constant_combined(option_data->value.string);
+					else
+						param_error = NULL;
+					option_data = option_data->next;
+				}
+			}
 		} else if (strcmp(options->name, "help") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				output_help = true;
@@ -140,7 +157,7 @@ int main(int argc, char *argv[])
 		} else if (strcmp(options->name, "source") == 0) {
 			if (options->data != NULL) {
 				option_data = options->data;
-				
+
 				while (option_data != NULL) {
 					if (option_data->value.string != NULL)
 						library_add_file(option_data->value.string);
@@ -169,7 +186,7 @@ int main(int argc, char *argv[])
 				 */
 
 				option_data = options->data;
-				
+
 				while (option_data != NULL) {
 					if (option_data->value.string != NULL)
 						library_add_path_combined(option_data->value.string);
@@ -190,7 +207,7 @@ int main(int argc, char *argv[])
 			if (options->data != NULL)
 				parse_options.tab_indent = options->data->value.integer;
 		}
-	
+
 		options = options->next;
 	}
 
@@ -202,29 +219,30 @@ int main(int argc, char *argv[])
 		printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
 		printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
 	}
-	
+
 	if (param_error || output_help) {
 		printf("ARM BASIC V Tokenizer -- Usage:\n");
 		printf("tokenize <infile> [<infile> ...] -out <outfile> [<options>]\n\n");
 
-		printf(" -crunch [EIRW]      Control application of output CRUNCHing.\n");
-		printf("                      E|e - Remove empty statements.\n");
-		printf("                      I|i - Remove opening indents.\n");
-		printf("                      L|l - Remove empty lines (implied by E).\n");
-		printf("                      R|r - Remove all|non-opening comments.\n");
-		printf("                      T|t - Remove trailing whitespace (implied by W).\n");
-		printf("                      W|w - Remove|reduce in-line whitespace.\n");
-		printf(" -help               Produce this help information.\n");
-		printf(" -increment <n>      Set the AUTO line number increment to <n>.\n");
-		printf(" -link               Link files from LIBRARY statements.\n");
-		printf(" -out <file>         Write tokenised basic to file <out>.\n");
+		printf(" -crunch [EIRW]         Control application of output CRUNCHing.\n");
+		printf("                    E|e - Remove empty statements.\n");
+		printf("                    I|i - Remove opening indents.\n");
+		printf("                    L|l - Remove empty lines (implied by E).\n");
+		printf("                    R|r - Remove all|non-opening comments.\n");
+		printf("                    T|t - Remove trailing whitespace (implied by W).\n");
+		printf("                    W|w - Remove|reduce in-line whitespace.\n");
+		printf(" -define <name>=<value> Define constant variables.\n");
+		printf(" -help                  Produce this help information.\n");
+		printf(" -increment <n>         Set the AUTO line number increment to <n>.\n");
+		printf(" -link                  Link files from LIBRARY statements.\n");
+		printf(" -out <file>            Write tokenised basic to file <out>.\n");
 #ifdef LINUX
-		printf(" -path <name>:<path> Set path variable <name> to <path>.\n"); 
+		printf(" -path <name>:<path>    Set path variable <name> to <path>.\n");
 #endif
-		printf(" -start <n>          Set the AUTO line number start to <n>.\n");
-		printf(" -tab <n>            Set the tab column with to <n> spaces.\n");
-		printf(" -verbose            Generate verbose process information.\n");
-	
+		printf(" -start <n>             Set the AUTO line number start to <n>.\n");
+		printf(" -tab <n>               Set the tab column with to <n> spaces.\n");
+		printf(" -verbose               Generate verbose process information.\n");
+
 		return (output_help) ? 0 : 1;
 	}
 
@@ -324,7 +342,7 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 

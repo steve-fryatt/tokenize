@@ -53,9 +53,19 @@ struct msg_data {
 	bool		show_location;
 };
 
+
+/**
+ * Error message definitions.
+ *
+ * NB: The order of these messages *must* match the order of the corresponding
+ * entries in enum msg_type in msgs.h
+ */
+
 static struct msg_data msg_messages[] = {
 	{MSG_ERROR,	"Unknown error",			true	},
 	{MSG_ERROR,	"Failed to open source file '%s'",	false	},
+	{MSG_ERROR,	"Constant variable %s already defined",	false	},
+	{MSG_ERROR,	"No room to define variable %s",	false	},
 	{MSG_ERROR,	"Line number %u out of range",		true	},
 	{MSG_ERROR,	"AUTO line number too large",		true	},
 	{MSG_WARNING,	"Line number %u out of sequence",	true	},

@@ -32,9 +32,19 @@
 
 #include <stdbool.h>
 
+
+/**
+ * Error message codes.
+ *
+ * NB: The order of these values *must* match the order of the error message
+ * definitions in msg_definitions[] in msgs.c.
+ */
+
 enum msg_type {
 	MSG_UNKNOWN_ERROR = 0,
 	MSG_OPEN_FAIL,
+	MSG_CONST_REDEF,
+	MSG_VAR_NOMEM,
 	MSG_LINE_OUT_OF_RANGE,
 	MSG_AUTO_OUT_OF_RANGE,
 	MSG_LINE_OUT_OF_SEQUENCE,
