@@ -166,7 +166,7 @@ bool variable_add_constant(char *name, char *value)
 		variable->value.string = strdup(value);
 		break;
 	case VARIABLE_REAL:
-		variable->value.real = 0.0; // \TODO -- Needs to set value.
+		variable->value.real = atof(value);
 		break;
 	default:
 		variable->value.string = NULL;
@@ -180,6 +180,78 @@ bool variable_add_constant(char *name, char *value)
 	variable_list = variable;
 
 	return true;
+}
+
+
+/**
+ * Process a variable in the parse buffer, looking names up and handing them
+ * appropriately: for constants...
+ *
+ * - Variables on the left-hand side are assignments, and are flagged back to
+ *   the caller to be removed.
+ *
+ * - Variables on the right-hand side are replaced by their constant value.
+ *
+ * \param *name		Pointer to the start of the variable name in the output
+ *			buffer.
+ * \param **write	Pointer to the output buffer write pointer, which will
+ *			be updated on exit.
+ * \return		True if the variable is being assigned to, else false.
+ */
+
+bool variable_process(char *name, char **write, bool statement_left)
+{
+	struct variable_entry	*variable;
+	int			written;
+	char			*read;
+
+	/* Look the variable name up in the index. */
+
+	variable = variable_find(name);
+	if (variable == NULL)
+		return false;
+
+	/* If the variable was found... */
+
+	if (statement_left) {
+		/* The variable was on the left, and so was being assigned to.
+		 * Therefore we return true to indicate that it should be removed.
+		 */
+
+		return true;
+	} else {
+		/* The variable was on the right, so we can replace it in the
+		 * output with the constant that it contains.
+		 */
+
+		switch (variable->type) {
+		case VARIABLE_INTEGER:
+			written = sprintf(name, "%d", variable->value.integer);
+			if (written > 0)
+				*write = name + written;
+			break;
+		case VARIABLE_REAL:
+			written = sprintf(name, "%f", variable->value.real);
+			if (written > 0)
+				*write = name + written;
+			break;
+		case VARIABLE_STRING:
+			read = variable->value.string;
+			*name++ = '\"';
+			while (*read != '\0') {
+				if (*read == '\"')
+					*name++ = '\"';
+				*name++ = *read++;
+			}
+			*name++ = '\"';
+			*write = name;
+			break;
+		default:
+			break;
+		}
+	}
+
+	return false;
 }
 
 

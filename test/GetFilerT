@@ -7,9 +7,13 @@
 :
 ON ERROR VDU 4 : PRINT "Error in GetFiler: ";REPORT$;" at line ";ERL : END
 :
+variable$ = "Test"
+:
 PRINT "Hello"; : LIBRARY "BASIC:WimpLib" : PRINT "World"
 :
 LIBRARY variable$
+
+PRINT int%, variable$, real
 
 IF TRUE THEN PRINT ELSE LIBRARY "BASIC:WimpLib"
 :

@@ -63,5 +63,23 @@ bool variable_add_constant_combined(char *constant);
 bool variable_add_constant(char *name, char *value);
 
 
+/**
+ * Process a variable in the parse buffer, looking names up and handing them
+ * appropriately: for constants...
+ *
+ * - Variables on the left-hand side are assignments, and are flagged back to
+ *   the caller to be removed.
+ *
+ * - Variables on the right-hand side are replaced by their constant value.
+ *
+ * \param *name		Pointer to the start of the variable name in the output
+ *			buffer.
+ * \param **write	Pointer to the output buffer write pointer, which will
+ *			be updated on exit.
+ * \return		True if the variable is being assigned to, else false.
+ */
+
+bool variable_process(char *name, char **write, bool statement_left);
+
 #endif
 

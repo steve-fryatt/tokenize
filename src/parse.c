@@ -39,6 +39,7 @@
 
 #include "library.h"
 #include "msg.h"
+#include "variable.h"
 
 /* The parse buffer should be longer than the maximum line length, as some
  * operations may overrun the limit by a few bytes.
@@ -713,6 +714,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool			constant_due = line_start;	/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
+	bool			no_clean_check = false;		/**< True if the clean_to_end check doesn't matter for deletion.	*/
 	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
 
 	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
@@ -904,10 +906,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			clean_to_end = false;
 		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read == '_') || (**read == '`')) {
 			/* Handle variable names */
+			char *variable_name = *write;
 			parse_process_variable(read, write);
 
 			if (library_path_due && options->link_libraries)
 				msg_report(MSG_VAR_LIB);
+
+			**write = '\0';
+			if (variable_process(variable_name, write, statement_left)) {
+				msg_report(MSG_CONST_REMOVE, variable_name);
+				status = PARSE_DELETED;
+				no_clean_check = true;
+			}
 
 			statement_start = false;
 			constant_due = false;
@@ -978,7 +988,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	if (status == PARSE_DELETED) {
 		*write = start_pos;
-		if (!clean_to_end)
+		if (!clean_to_end && !no_clean_check)
 			status = PARSE_ERROR_DELETED_STATEMENT;
 	} else {
 		*real_pos += (*write - start_pos) + extra_spaces;

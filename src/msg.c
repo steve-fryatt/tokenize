@@ -62,20 +62,21 @@ struct msg_data {
  */
 
 static struct msg_data msg_messages[] = {
-	{MSG_ERROR,	"Unknown error",			true	},
-	{MSG_ERROR,	"Failed to open source file '%s'",	false	},
-	{MSG_ERROR,	"Constant variable %s already defined",	false	},
-	{MSG_ERROR,	"No room to define variable %s",	false	},
-	{MSG_ERROR,	"Line number %u out of range",		true	},
-	{MSG_ERROR,	"AUTO line number too large",		true	},
-	{MSG_WARNING,	"Line number %u out of sequence",	true	},
-	{MSG_ERROR,	"Line too long",			true	},
-	{MSG_ERROR,	"Invalid line number constant",		true	},
-	{MSG_ERROR,	"Unterminated string",			true	},
-	{MSG_ERROR,	"Misformed deleted statement",		true	},
-	{MSG_INFO,	"Queue 'LIBRARY \"%s\"' for linking",	true	},
-	{MSG_WARNING,	"Unisolated LIBRARY not linked",	true	},
-	{MSG_WARNING,	"Variable LIBRARY not linked",		true	}
+	{MSG_ERROR,	"Unknown error",				true	},
+	{MSG_ERROR,	"Failed to open source file '%s'",		false	},
+	{MSG_ERROR,	"Constant variable %s already defined",		false	},
+	{MSG_WARNING,	"Constant variable assignement to %s removed",	true	},
+	{MSG_ERROR,	"No room to define variable %s",		false	},
+	{MSG_ERROR,	"Line number %u out of range",			true	},
+	{MSG_ERROR,	"AUTO line number too large",			true	},
+	{MSG_WARNING,	"Line number %u out of sequence",		true	},
+	{MSG_ERROR,	"Line too long",				true	},
+	{MSG_ERROR,	"Invalid line number constant",			true	},
+	{MSG_ERROR,	"Unterminated string",				true	},
+	{MSG_ERROR,	"Misformed deleted statement",			true	},
+	{MSG_INFO,	"Queue 'LIBRARY \"%s\"' for linking",		true	},
+	{MSG_WARNING,	"Unisolated LIBRARY not linked",		true	},
+	{MSG_WARNING,	"Variable LIBRARY not linked",			true	}
 };
 
 static char	msg_location[MSG_MAX_LOCATION_TEXT];
