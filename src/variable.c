@@ -208,7 +208,7 @@ bool variable_process(char *name, char **write, bool statement_left)
 	/* Look the variable name up in the index. */
 
 	variable = variable_find(name);
-	if (variable == NULL)
+	if (variable == NULL || variable->mode != VARIABLE_CONSTANT)
 		return false;
 
 	/* If the variable was found... */
