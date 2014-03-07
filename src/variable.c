@@ -40,6 +40,7 @@
 #include "msg.h"
 
 enum variable_mode {
+	VARIABLE_UNSET = 0,			/**< Variable has not yet been set up.				*/
 	VARIABLE_IGNORE = 0,			/**< Variable is to be ignored.					*/
 	VARIABLE_CONSTANT			/**< Variable is a constant, and should be replaced by value.	*/
 };
@@ -76,6 +77,8 @@ struct variable_entry {
 static struct variable_entry	*variable_list = NULL;
 
 
+static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write);
+static struct variable_entry *variable_create(char *name);
 static enum variable_type variable_find_type(char *name);
 static struct variable_entry *variable_find(char *name);
 
@@ -150,14 +153,12 @@ bool variable_add_constant(char *name, char *value)
 
 	/* If the variable doesn't exist, create a new record for it. */
 
-	variable = malloc(sizeof(struct variable_entry));
-	if (variable == NULL) {
-		msg_report(MSG_VAR_NOMEM, name);
+	variable = variable_create(name);
+	if (variable == NULL)
 		return false;
-	}
 
-	variable->name = strdup(name);
-	variable->type = variable_find_type(variable->name);
+	variable->mode = VARIABLE_CONSTANT;
+
 	switch (variable->type) {
 	case VARIABLE_INTEGER:
 		variable->value.integer = atoi(value);
@@ -172,12 +173,6 @@ bool variable_add_constant(char *name, char *value)
 		variable->value.string = NULL;
 		break;
 	}
-
-	variable->mode = VARIABLE_CONSTANT;
-	variable->count = 0;
-
-	variable->next = variable_list;
-	variable_list = variable;
 
 	return true;
 }
@@ -202,56 +197,111 @@ bool variable_add_constant(char *name, char *value)
 bool variable_process(char *name, char **write, bool statement_left)
 {
 	struct variable_entry	*variable;
-	int			written;
-	char			*read;
 
 	/* Look the variable name up in the index. */
 
 	variable = variable_find(name);
-	if (variable == NULL || variable->mode != VARIABLE_CONSTANT)
+	if (variable == NULL)
+		variable = variable_create(name);
+
+	if (variable == NULL)
 		return false;
 
-	/* If the variable was found... */
+	/* If the variable was found or created... */
+ 
+	variable->count++;
 
-	if (statement_left) {
-		/* The variable was on the left, and so was being assigned to.
-		 * Therefore we return true to indicate that it should be removed.
-		 */
+	switch (variable->mode) {
+	case VARIABLE_CONSTANT:
+		if (statement_left)
+			return true;
 
-		return true;
-	} else {
-		/* The variable was on the right, so we can replace it in the
-		 * output with the constant that it contains.
-		 */
+		variable_substitute_constant(variable, name, write);
+		break;
 
-		switch (variable->type) {
-		case VARIABLE_INTEGER:
-			written = sprintf(name, "%d", variable->value.integer);
-			if (written > 0)
-				*write = name + written;
-			break;
-		case VARIABLE_REAL:
-			written = sprintf(name, "%f", variable->value.real);
-			if (written > 0)
-				*write = name + written;
-			break;
-		case VARIABLE_STRING:
-			read = variable->value.string;
-			*name++ = '\"';
-			while (*read != '\0') {
-				if (*read == '\"')
-					*name++ = '\"';
-				*name++ = *read++;
-			}
-			*name++ = '\"';
-			*write = name;
-			break;
-		default:
-			break;
-		}
+	default:
+		break;
 	}
 
 	return false;
+}
+
+static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write)
+{
+	int	written;
+	char	*read;
+
+	if (variable == NULL)
+		return;
+
+	/* The variable was on the right, so we can replace it in the
+	 * output with the constant that it contains.
+	 */
+
+	switch (variable->type) {
+	case VARIABLE_INTEGER:
+		written = sprintf(name, "%d", variable->value.integer);
+		if (written > 0)
+			*write = name + written;
+		break;
+	case VARIABLE_REAL:
+		written = sprintf(name, "%f", variable->value.real);
+		if (written > 0)
+			*write = name + written;
+		break;
+	case VARIABLE_STRING:
+		read = variable->value.string;
+		*name++ = '\"';
+		while (*read != '\0') {
+			if (*read == '\"')
+				*name++ = '\"';
+			*name++ = *read++;
+		}
+		*name++ = '\"';
+		*write = name;
+		break;
+	default:
+		break;
+	}
+}
+
+
+
+static struct variable_entry *variable_create(char *name)
+{
+	struct variable_entry	*variable;
+
+	if (name == NULL)
+		return NULL;
+
+	variable = malloc(sizeof(struct variable_entry));
+	if (variable == NULL) {
+		msg_report(MSG_VAR_NOMEM, name);
+		return NULL;
+	}
+
+	variable->name = strdup(name);
+	variable->type = variable_find_type(variable->name);
+	switch (variable->type) {
+	case VARIABLE_INTEGER:
+		variable->value.integer = 0;
+		break;
+	case VARIABLE_REAL:
+		variable->value.real = 0.0;
+		break;
+	case VARIABLE_STRING:
+	default:
+		variable->value.string = NULL;
+		break;
+	}
+
+	variable->mode = VARIABLE_UNSET;
+	variable->count = 0;
+
+	variable->next = variable_list;
+	variable_list = variable;
+
+	return variable;
 }
 
 
