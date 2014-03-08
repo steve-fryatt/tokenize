@@ -251,8 +251,6 @@ int main(int argc, char *argv[])
 	if (!tokenize_run_job(output_file, &parse_options))
 		return 1;
 
-	// variable_dump_list();
-
 	return 0;
 }
 

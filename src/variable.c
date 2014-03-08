@@ -68,7 +68,9 @@ struct variable_entry {
 	union variable_value	value;		/**< The variable's value information.				*/
 
 	enum variable_mode	mode;		/**< The variable's mode.					*/
-	unsigned		count;		/**< The number of times the variable has been seen.		*/
+
+	unsigned		assignments;	/**< The number of times the variable has been assigned.	*/
+	unsigned		reads;		/**< The number of times the variable has been read.		*/
 
 	struct variable_entry	*next;		/**< Pointer to the next variable in the chain, or NULL.	*/
 };
@@ -115,7 +117,7 @@ void variable_dump_list(void)
 
 		while (list != NULL) {
 			if (list->name != NULL)
-				printf("%s = ?\n", list->name);
+				printf("%s => assigned %d, read %d\n", list->name, list->assignments, list->reads);
 			list = list->next;
 		}
 
@@ -240,7 +242,10 @@ bool variable_process(char *name, char **write, bool statement_left)
 
 	/* If the variable was found or created... */
  
-	variable->count++;
+	if (statement_left)
+		variable->assignments++;
+	else
+		variable->reads++;
 
 	switch (variable->mode) {
 	case VARIABLE_CONSTANT:
@@ -345,7 +350,8 @@ static struct variable_entry *variable_create(char *name)
 	}
 
 	variable->mode = VARIABLE_UNSET;
-	variable->count = 0;
+	variable->assignments = 0;
+	variable->reads = 0;
 
 	index = variable_find_index(name);
 	variable->next = variable_list[index];
