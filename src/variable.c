@@ -73,14 +73,14 @@ struct variable_entry {
 	struct variable_entry	*next;		/**< Pointer to the next variable in the chain, or NULL.	*/
 };
 
-
-static struct variable_entry	*variable_list = NULL;
-
+#define VARIABLE_INDEXES 128
+static struct variable_entry	*variable_list[VARIABLE_INDEXES];
 
 static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write);
 static struct variable_entry *variable_create(char *name);
 static enum variable_type variable_find_type(char *name);
 static struct variable_entry *variable_find(char *name);
+static int variable_find_index(char *name);
 
 
 /**
@@ -89,7 +89,38 @@ static struct variable_entry *variable_find(char *name);
 
 void variable_initialise(void)
 {
+	int	i;
 
+	for (i = 0; i < VARIABLE_INDEXES; i++)
+		variable_list[i] = NULL;
+}
+
+
+/**
+ * Dump a list of known variables to stdout.
+ */
+
+void variable_dump_list(void)
+{
+	int			i;
+	struct variable_entry	*list;
+
+	for (i = 0; i < VARIABLE_INDEXES; i++) {
+		if (variable_list[i] == NULL)
+			continue;
+
+		printf("Variables Starting With %c\n-------------------------\n", i);
+
+		list = variable_list[i];
+
+		while (list != NULL) {
+			if (list->name != NULL)
+				printf("%s = ?\n", list->name);
+			list = list->next;
+		}
+
+		printf("\n");
+	}
 }
 
 
@@ -287,6 +318,7 @@ static void variable_substitute_constant(struct variable_entry *variable, char *
 static struct variable_entry *variable_create(char *name)
 {
 	struct variable_entry	*variable;
+	int			index;
 
 	if (name == NULL)
 		return NULL;
@@ -315,8 +347,9 @@ static struct variable_entry *variable_create(char *name)
 	variable->mode = VARIABLE_UNSET;
 	variable->count = 0;
 
-	variable->next = variable_list;
-	variable_list = variable;
+	index = variable_find_index(name);
+	variable->next = variable_list[index];
+	variable_list[index] = variable;
 
 	return variable;
 }
@@ -367,7 +400,14 @@ static enum variable_type variable_find_type(char *name)
 
 static struct variable_entry *variable_find(char *name)
 {
-	struct variable_entry *list = variable_list;
+	struct variable_entry	*list;
+	int			index;
+
+	if (name == NULL)
+		return NULL;
+
+	index = variable_find_index(name);
+	list = variable_list[index];
 
 	while (list != NULL && list->name != NULL && strcmp(list->name, name) != 0)
 		list = list->next;
@@ -378,3 +418,24 @@ static struct variable_entry *variable_find(char *name)
 	return list;
 }
 
+
+/**
+ * Return the index for a given variable name.
+ *
+ * \param *name		Pointer to the name to index.
+ * \return		The index from the name.
+ */
+
+static int variable_find_index(char *name)
+{
+	int	index;
+
+	if (name == NULL)
+		return 0;
+
+	index = (int) *name;
+	if (index < 0 || index >= VARIABLE_INDEXES)
+		return 0;
+
+	return index;
+}

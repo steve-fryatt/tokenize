@@ -41,6 +41,13 @@ void variable_initialise(void);
 
 
 /**
+ * Dump a list of known variables to stdout.
+ */
+
+void variable_dump_list(void);
+
+
+/**
  * Add a constant definition in the form of a single name=value string, such as
  * would be obtained from the command-line.
  *
