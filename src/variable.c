@@ -226,6 +226,17 @@ bool variable_process(char *name, char **write, bool statement_left)
 	return false;
 }
 
+
+/**
+ * Write a variable's value out into a buffer, starting at the specified point
+ * and updating the line pointer when done.
+ *
+ * \param *variable	Pointer to the variable to be substituted.
+ * \param *name		Pointer to the start location in the write buffer.
+ * \param **write	Pointer to the buffer position pointer, to be updated
+ *			after the substitution is completed.
+ */
+
 static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write)
 {
 	int	written;
@@ -266,6 +277,12 @@ static void variable_substitute_constant(struct variable_entry *variable, char *
 }
 
 
+/**
+ * Create a new variable, returning a pointer to its data block.
+ *
+ * \param *name		Pointer to the name to use for the new variable.
+ * \return		Pointer to the newly created block, or NULL on failure.
+ */
 
 static struct variable_entry *variable_create(char *name)
 {
