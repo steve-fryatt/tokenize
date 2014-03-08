@@ -154,6 +154,39 @@ When used on RISC&nbsp;OS, filenames are passed straight to the filing system: a
 When used on other platforms, it is possible to specify &lsquo;path variables&rsquo; to <cite>Tokenize</cite> so that statements such as <code>LIBRARY &quot;BASIC:Library&quot;</code> can be used. On RISC&nbsp;OS, such a filename would resolve to the file <file>Library</file> somewhere on <code>&lt;BASIC$Path&gt;</code>. <cite>Tokenize</cite> allows paths to be specified using the <param>-path</param> parameter: <command>-param BASIC:libs/</command> would mean that <code>BASIC:</code> would expand to <code>libs/</code> and therefore result in <code>LIBRARY &quot;libs/Library&quot;</code> for the example here. As with RISC&nbsp;OS path variables, paths must end with a directory separator in the local format. More than one <param>-path</param> parameter can be specified on the command line if required.
 
 
+<subhead title="Constant Variables">
+
+When tokenizing a file, <cite>Tokenize</cite> can replace specific variables with constant values given via the <param>-define</param> parameter on the command line. Any instances of the variable found in the code will be replaced by the constant value, unless they are being assigned: in which case the statement containing the assignment will be removed completely.
+
+A <param>-define</param> parameter is followed by a variable assignment in the form <code>&lt;name&gt;=&lt;value&gt;</code>. To assign an integer variable <code>int%</code> the constant value 10, for example, use <command>-define int%=10</command>; to give the string variable <code>name$</code> the value "Hello World", use <command>-define &quot;name$=Hello&nbsp;World&quot;</command>. Note that string values are not surrounded by double quotation marks, but if the value contains spaces then the whole parameter value must be enclosed as here.
+
+Note that support for constants is currently limited: all references to the variable will be replaced, including those defined as <code>LOCAL</code>. Additionally, matches with the variable names within blocks of assembler code will also be replaced. The result is unlikely to produce working code.
+
+Within these limitations, however, it is possible to use constants to insert details such as build dates into code. For example, given the code
+
+<codeblock>
+REM >Build Date
+:
+VERSION$ = "1.23"
+BUILD_DATE$ = "12 Mar 2014"
+:
+PRINT "Example Program"
+PRINT VERSION$;" (";BUILD_DATE$;")"
+</codeblock>
+
+then passing the definitions <command>-define VERSION$=0.12 -define &quot;BUILD_DATE$=01 Apr 2014&quot;</command> would result in the output containing
+
+<codeblock>
+REM >Build Date
+:
+:
+PRINT "Example Program"
+PRINT "0.12";" (";"01 Apr 2014";")"
+</codeblock>
+
+being produced.
+
+
 <subhead title="Indentation and Crunching">
 
 <cite>Tokenize</cite> can adjust the indentation and spacing of the BASIC source when generating tokenized output.
@@ -255,6 +288,10 @@ Errors are generated during the linking and tokenization process when a problem 
 Automatic line numbering applied via the <param>-start</param> and <param>-increment</param> parameters has risen above the maximum allowed value of 65279.
 </definition>
 
+<definition target="Constant variable &lt;variable&gt; already defined">
+Variables can only be assigned as constants on the command line once. If a variable is listed more than once, this error is given.
+</definition>
+
 <definition target="Failed to open source file '&lt;file&gt;'">
 A source file &ndash; either specified on the command line or via a linked <code>LIBRARY</code> statement &ndash; could not be opened for processing. This could be because it did not have the correct permissions, or because it did not exist in the location specified. Remember that on some platforms, filenames will be case-sensitive &ndash; references that work on RISC&nbsp;OS&rsquo;s case-insensitive Filecore systems might fail on other platform&rsquo;s case-sensitive filesystems.
 </definition>
@@ -285,6 +322,10 @@ String constants must be enclosed by double quotes (&quot;...&quot;), and a pair
 <subhead title="Warnings">
 
 Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well not prevent the tokenized program from working.
+
+<definition target="Constant variable assignment to &lt;variable&gt; removed">
+A variable defined on the command line has been found as the target of an assignment, resulting in the entire statement being removed.
+</definition>
 
 <definition target="Line number &lt;n&gt; out of sequence">
 A line number explicitly specified in a source file is out of sequence, and would be less than or equal to the number of the line before. This could be due to a clear error such as
