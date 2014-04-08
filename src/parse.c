@@ -1230,6 +1230,8 @@ static bool parse_process_numeric_constant(char **read, char **write)
  * \param **write	Pointer to the current write pointer.
  * \param *extra_spaces	Pointer to integer tracking the difference in line length
  *			between binary and displayed constant.
+ * \return		True if the value was accepted; false if it was rejected
+ *			and therefore must be passed on.
  */
 
 static bool parse_process_binary_constant(char **read, char **write, int *extra_spaces)
