@@ -581,7 +581,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			 * it so.
 			 */
 
-			if (options->crunch_body_rems == true && options->crunch_rems == false && status != PARSE_COMMENT)
+			if (options->crunch_body_rems == true && options->crunch_rems == false)
 				options->crunch_rems = true;
 		} else if (status == PARSE_WHITESPACE || status == PARSE_COMMENT || status == PARSE_COMPLETE) {
 			/* If the statement was parsed OK, process it. */
