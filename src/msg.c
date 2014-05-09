@@ -81,6 +81,11 @@ static struct msg_data msg_messages[] = {
 
 static char	msg_location[MSG_MAX_LOCATION_TEXT];
 
+/**
+ * Set to true if an error is reported.
+ */
+
+static bool	msg_error_reported = false;
 
 /**
  * Set the location for future messages, in the form of a file and line number
@@ -127,6 +132,7 @@ void msg_report(enum msg_type type, ...)
 		break;
 	case MSG_ERROR:
 		level = "Error";
+		msg_error_reported = true;
 		break;
 	default:
 		level = "Message:";
@@ -137,5 +143,17 @@ void msg_report(enum msg_type type, ...)
 		fprintf(stderr, "%s: %s %s\n", level, message, msg_location);
 	else
 		fprintf(stderr, "%s: %s\n", level, message);
+}
+
+
+/**
+ * Indicate whether an error has been reported at any point.
+ *
+ * \return		True if an error has been reported; else false.
+ */
+
+bool msg_errors(void)
+{
+	return msg_error_reported;
 }
 

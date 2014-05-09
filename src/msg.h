@@ -80,5 +80,14 @@ void msg_set_location(unsigned line, char *file);
 
 void msg_report(enum msg_type type, ...);
 
+
+/**
+ * Indicate whether an error has been reported at any point.
+ *
+ * \return		True if an error has been reported; else false.
+ */
+
+bool msg_errors(void);
+
 #endif
 

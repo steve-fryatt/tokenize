@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
 
 	/* Run the tokenisation. */
 
-	if (!tokenize_run_job(output_file, &parse_options))
+	if (!tokenize_run_job(output_file, &parse_options) || msg_errors())
 		return 1;
 
 	return 0;
@@ -295,7 +295,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 	osfile_set_type(output_file, osfile_TYPE_BASIC);
 #endif
 
-	return true;
+	return success;
 }
 
 
