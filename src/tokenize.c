@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 		printf("ARM BASIC V Tokenizer -- Usage:\n");
 		printf("tokenize <infile> [<infile> ...] -out <outfile> [<options>]\n\n");
 
-		printf(" -crunch [EIRW]         Control application of output CRUNCHing.\n");
+		printf(" -crunch [EILRTW]       Control application of output CRUNCHing.\n");
 		printf("                    E|e - Remove empty statements.\n");
 		printf("                    I|i - Remove opening indents.\n");
 		printf("                    L|l - Remove empty lines (implied by E).\n");
