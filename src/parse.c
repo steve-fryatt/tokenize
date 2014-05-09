@@ -53,6 +53,9 @@
 
 #define parse_output_length(p) ((p) - parse_buffer)
 
+#define left_token(k) ((char) parse_keywords[(k)].start)
+#define right_token(k) ((char) parse_keywords[(k)].elsewhere)
+
 /**
  * List of keyword array indexes. This must match the entries in the
  * parse_keywords[] array defined further down the file.
@@ -1309,8 +1312,12 @@ static void parse_process_variable(char **read, char **write)
 
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options)
 {
-	bool	first_space = true;
-	int	insert;
+	bool			first_space = true;
+	bool			no_spaces = true;
+	int			insert;
+	char			previous = *(*write - 1);
+	char			next, *read_copy;
+	enum parse_keyword	next_keyword;
 
 	while (isspace(**read) && **read != '\n') {
 		if (!(options->crunch_all_whitespace || (options->crunch_whitespace && !first_space))) {
@@ -1324,11 +1331,38 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 			} else if ((parse_output_length(*write) < MAX_LINE_LENGTH) && (!options->crunch_whitespace || first_space)) {
 				*(*write)++ = ' ';
 			}
+			
+			no_spaces = false;
 		}
 
 		(*read)++;
 
 		first_space = false;
+	}
+
+	/* If there have been no spaces output, check the previous and next bytes
+	 * to see if they can be safely run together. If they can't, then output a
+	 * single space to prevent problems.
+	 *
+	 * Copy the read pointer to avoid moving it past any following token, then
+	 * tokenise the next characters from the buffer. Set next so that it
+	 * contains either the token that would be following the space, or the
+	 * character that's there now. The previous value is already set.
+	 */
+
+	if (no_spaces == true) {
+		read_copy = *read;
+		next_keyword = parse_match_token(&read_copy);
+		next = (next_keyword != KWD_NO_MATCH) ? right_token(next_keyword) : **read;
+
+		/* Apply the rules from BASIC's CRUNCH command. */
+
+		if (	((previous == '"') && (next == '"')) ||
+			((previous == '$' || previous == '%' || previous == right_token(KWD_RND)) && (next == '(' || next == '!' || next == '?')) ||
+			((previous == right_token(KWD_EOR) || previous == right_token(KWD_AND)) && parse_is_name_body(next)) ||
+			((previous == ')') && (next == '?' || next == '!')) ||
+			((parse_is_name_body(previous) || previous == '.') && (parse_is_name_body(next) || next == '.' || next == '$' || next == '%')))
+		*(*write)++ = ' ';
 	}
 }
 
