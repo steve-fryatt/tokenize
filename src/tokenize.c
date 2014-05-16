@@ -39,6 +39,7 @@
 
 #include "args.h"
 #include "library.h"
+#include "msg.h"
 #include "parse.h"
 #include "variable.h"
 
@@ -47,8 +48,6 @@
 #ifdef RISCOS
 #include "oslib/osfile.h"
 #endif
-
-#include "msg.h"
 
 #define MAX_INPUT_LINE_LENGTH 1024
 #define MAX_LOCATION_TEXT 256
@@ -71,6 +70,7 @@ int main(int argc, char *argv[])
 	parse_options.line_start = 10;
 	parse_options.line_increment = 10;
 	parse_options.link_libraries = false;
+	parse_options.convert_swis = false;
 	parse_options.verbose_output = false;
 	parse_options.crunch_body_rems = false;
 	parse_options.crunch_rems = false;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,tab/IK,crunch/K,verbose/S,help/S");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,tab/IK,crunch/K,verbose/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -172,6 +172,9 @@ int main(int argc, char *argv[])
 				if (parse_options.line_start < 0 || parse_options.line_start > PARSE_MAX_LINE_NUMBER)
 					param_error = true;
 			}
+		} else if (strcmp(options->name, "swi") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				parse_options.convert_swis = true;
 		} else if (strcmp(options->name, "out") == 0) {
 			if (options->data != NULL && options->data->value.string != NULL)
 				output_file = options->data->value.string;

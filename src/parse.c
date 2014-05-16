@@ -39,6 +39,7 @@
 
 #include "library.h"
 #include "msg.h"
+#include "swi.h"
 #include "variable.h"
 
 /* The parse buffer should be longer than the maximum line length, as some
@@ -724,6 +725,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool			statement_left = true;		/**< True while we're in "left-side" mode for tokens.			*/
 	bool			constant_due = line_start;	/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
+	bool			swi_name_due = false;		/**< True if we're expecting a SWI name.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
 	bool			no_clean_check = false;		/**< True if the clean_to_end check doesn't matter for deletion.	*/
 	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
@@ -754,6 +756,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && **read == ']' && bracket_count > 0) {
 			/* Close a matched [...] in assembler. */
@@ -765,6 +768,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && **read == ']') {
 			/* An unmatched ] in a statememt terminates the assember. */
@@ -776,6 +780,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && **read == ';') {
 			/* An assembler comment, so parsing needs to relax. */
@@ -787,6 +792,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (**read == '[' && *assembler == false) {
 			/* This is the start of an assembler block. */
@@ -799,10 +805,14 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (**read == '\"') {
 			/* Copy strings as a lump, but not from assembler comments. */
-			if (!parse_process_string(read, write, (library_path_due == true) ? library_path : NULL) && !assembler_comment)
+			char *string_start = *write;
+			int swi_number;
+			
+			if (!parse_process_string(read, write, (library_path_due == true || swi_name_due == true) ? library_path : NULL) && !assembler_comment)
 				return PARSE_ERROR_OPEN_STRING;
 
 			clean_to_end = false;
@@ -813,12 +823,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				status = PARSE_DELETED;
 				if (options->verbose_output)
 					msg_report(MSG_QUEUE_LIB, library_path);
+			} else if (swi_name_due && *library_path != '\0' && options->convert_swis) {
+				swi_number = swi_get_number_from_name(library_path);
+
+				if (swi_number != -1)
+					*write = string_start + snprintf(string_start, 9, "&%X", swi_number);
 			}
 
 			statement_start = false;
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
+			swi_name_due = false;
 		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != KWD_NO_MATCH) {
 			/* Handle keywords */
 			unsigned bytes;
@@ -849,6 +865,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			}
 
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 
 			/* Move between left- and right-hand sides of expressions. */
@@ -899,6 +916,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				else if (options->link_libraries)
 					msg_report(MSG_SKIPPED_LIB);
 				break;
+			case KWD_SYS:
+				swi_name_due = true;
+				break;
 			default:
 				break;
 			}
@@ -914,6 +934,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read == '_') || (**read == '`')) {
 			/* Handle variable names */
@@ -935,6 +956,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_left = false;
 			line_start = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
@@ -946,6 +968,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 		} else if (**read == '*' && statement_left) {
 			/* It's a star command, so run out to the end of the line. */
@@ -962,6 +985,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
+			swi_name_due = false;
 			clean_to_end = false;
 
 			/* Whitespace or commas are the only valid things separating

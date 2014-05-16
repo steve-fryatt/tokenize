@@ -46,6 +46,8 @@ struct parse_options {
 
 	bool		link_libraries;		/**< True to link LIBRARY files; False to ignore.		*/
 
+	bool		convert_swis;		/**< True to convert SWI names into numbers.			*/
+
 	bool		verbose_output;		/**< True to produce verbose output; false to be silent.	*/
 
 	bool		crunch_body_rems;	/**< True to remove all body REM statements.			*/
