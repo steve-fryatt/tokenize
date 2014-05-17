@@ -810,7 +810,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if (**read == '\"') {
 			/* Copy strings as a lump, but not from assembler comments. */
 			char *string_start = *write;
-			int swi_number;
+			long swi_number;
 			
 			if (!parse_process_string(read, write, (library_path_due == true || swi_name_due == true) ? library_path : NULL) && !assembler_comment)
 				return PARSE_ERROR_OPEN_STRING;
@@ -826,10 +826,16 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			} else if (swi_name_due && *library_path != '\0' && options->convert_swis) {
 				swi_number = swi_get_number_from_name(library_path);
 
-				if (swi_number != -1)
-					*write = string_start + snprintf(string_start, 9, "&%X", swi_number);
-				else
+				if (swi_number != -1) {
+					/* Use hex or decimal to keep the number as short as possible. */
+					if ((swi_number >= 10 && swi_number <= 15) || (swi_number >= 100 && swi_number <= 255) ||
+							(swi_number >= 1000 && swi_number <= 4095) || (swi_number >= 10000 && swi_number <= 65535))
+						*write = string_start + snprintf(string_start, 9, "&%lX", swi_number);
+					else
+						*write = string_start + snprintf(string_start, 9, "%ld", swi_number);
+				} else {
 					msg_report(MSG_SWI_LOOKUP_FAIL, library_path);
+				}
 			}
 
 			statement_start = false;
