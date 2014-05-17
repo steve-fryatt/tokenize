@@ -201,7 +201,7 @@ bool swi_add_header_file(char *file)
 	if (header == NULL)
 		return false;
 
-	line_end = line + SWI_MAX_LINE_LENGTH - 5;
+	line_end = line + SWI_MAX_LINE_LENGTH;
 
 	while (fgets(line, SWI_MAX_LINE_LENGTH, header) != NULL) {
 		p = line;
