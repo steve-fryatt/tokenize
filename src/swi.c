@@ -27,7 +27,7 @@
  * SWI name to number conversion, implementation.
  */
 
-#include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 /* Local source headers. */
@@ -40,7 +40,9 @@
 #include "oslib/os.h"
 #endif
 
+#ifdef RISCOS
 static int	swi_os_lookup(char *name);
+#endif
 
 /**
  * Look up a SWI name, returning its number if a match is found.
@@ -82,4 +84,18 @@ static int swi_os_lookup(char *name)
 	return number;
 }
 #endif
+
+
+/**
+ * Add the contents of a header file to the list of known
+ * SWI names and numbers.
+ *
+ * \param *file		The file to be added.
+ * \return		True if successful; False on error.
+ */
+
+bool swi_add_header_file(char *file)
+{
+	return true;
+}
 

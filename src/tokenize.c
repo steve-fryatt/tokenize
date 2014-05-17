@@ -41,6 +41,7 @@
 #include "library.h"
 #include "msg.h"
 #include "parse.h"
+#include "swi.h"
 #include "variable.h"
 
 /* OSLib source headers. */
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
 
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,tab/IK,crunch/K,verbose/S,help/S");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,swis/KM,tab/IK,crunch/K,verbose/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -175,6 +176,32 @@ int main(int argc, char *argv[])
 		} else if (strcmp(options->name, "swi") == 0) {
 			if (options->data != NULL && options->data->value.boolean == true)
 				parse_options.convert_swis = true;
+		} else if (strcmp(options->name, "swis") == 0) {
+			if (options->data != NULL) {
+#ifdef LINUX
+				/* The swis parameter is valid on non-RISC OS systems,
+				 * as we don't have OS_SWINumberFromString available
+				 * to us.
+				 */
+
+				option_data = options->data;
+
+				while (option_data != NULL) {
+					if (option_data->value.string != NULL)
+						swi_add_header_file(option_data->value.string);
+					else
+						param_error = NULL;
+					option_data = option_data->next;
+				}
+#endif
+#ifdef RISCOS
+				/* On RISC OS, there's no point using SWI lists as
+				 * it is better to use OS_SWINumberFromString.
+				 */
+
+				param_error = true;
+#endif
+			}
 		} else if (strcmp(options->name, "out") == 0) {
 			if (options->data != NULL && options->data->value.string != NULL)
 				output_file = options->data->value.string;
@@ -243,6 +270,10 @@ int main(int argc, char *argv[])
 		printf(" -path <name>:<path>    Set path variable <name> to <path>.\n");
 #endif
 		printf(" -start <n>             Set the AUTO line number start to <n>.\n");
+		printf(" -swi                   Convert SWI names into numbers.\n");
+#ifdef LINUX
+		printf(" -swis <file>           Use SWI names from file <file>.\n");
+#endif
 		printf(" -tab <n>               Set the tab column with to <n> spaces.\n");
 		printf(" -verbose               Generate verbose process information.\n");
 

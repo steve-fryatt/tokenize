@@ -30,6 +30,8 @@
 #ifndef TOKENIZE_SWI_H
 #define TOKENIZE_SWI_H
 
+#include <stdbool.h>
+
 /**
  * Look up a SWI name, returning its number if a match is found.
  *
@@ -38,6 +40,17 @@
  */
 
 int swi_get_number_from_name(char *name);
+
+
+/**
+ * Add the contents of a header file to the list of known
+ * SWI names and numbers.
+ *
+ * \param *file		The file to be added.
+ * \return		True if successful; False on error.
+ */
+
+bool swi_add_header_file(char *file);
 
 #endif
 
