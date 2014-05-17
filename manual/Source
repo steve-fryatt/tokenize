@@ -130,7 +130,7 @@ REM File 2
 REM File 3
 </codeblock>
 
-In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves. Thus if the statement <code>LIBRARY &quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that their are found in the source.
+In addition to files explicitly given on the command line, <cite>Tokenize</cite> can link in files referenced via <code>LIBRARY</code> commands in the source files themselves if the <param>-link</param> parameter is used. Thus if the statement <code>LIBRARY&nbsp;&quot;MoreCode&quot;</code> was included in a source file, the file <file>MoreCode</file> would be added to the list of files to be linked in and the statement would be removed from the tokenized output. Such files will be added to the queue for linking after any given on the command line, and will be processed in the order that they are found in the source.
 
 <code>LIBRARY</code> commands must appear alone in a statement in order to be considered for linking. In other words, these two examples would be linked
 
@@ -174,7 +174,7 @@ PRINT "Example Program"
 PRINT VERSION$;" (";BUILD_DATE$;")"
 </codeblock>
 
-then passing the definitions <command>-define VERSION$=0.12 -define &quot;BUILD_DATE$=01 Apr 2014&quot;</command> would result in the output containing
+then passing the definitions <command>-define VERSION$=0.12 -define &quot;BUILD_DATE$=01 Apr 2014&quot;</command> would result in the output
 
 <codeblock>
 REM >Build Date
@@ -185,6 +185,15 @@ PRINT "0.12";" (";"01 Apr 2014";")"
 </codeblock>
 
 being produced.
+
+
+<subhead title="SWI Number Conversion">
+
+When tokenising a BASIC program, <cite>Tokenize</cite> can convert any SWI names used in <code>SYS<code> commands into numeric constants &ndash; removing the need for the BASIC interpreter to look them up when the program is runs. To perform this operation, use the <param>-swi</param> parameter.
+
+When running on RISC&nbsp;OS, <cite>Tokenize</cite> will look the SWI names up with the help of the operating system: as with any other BASIC cruncher, the modules used to provide any extension SWIs must be loaded when the tokenisation happens, or the names will be left in place (with a warning).
+
+When running on other platforms, the option of looking up SWI names via the OS is not available. <cite>Tokenize</cite> can read the details from suitable C header files: <file>swis.h</file> that comes with GCC and Acorn&nbsp;C is a good option.
 
 
 <subhead title="Indentation and Crunching">
@@ -237,9 +246,11 @@ The <param>r</param> and <param>R</param> options allow comments to be stripped 
 <codeblock>
 REM >Example
 REM
-REM This is the end of the end of the head comment.
+REM This is the end of the head comment.
 
 REM This line will be removed.
+
+PRINT "Hello World!"
 </codeblock>
 
 and even
@@ -247,7 +258,7 @@ and even
 <codeblock>
 REM >Example
 REM
-REM This is the end of the end of the head comment.
+REM This is the end of the head comment.
 PRINT "Hello World!" : REM This comment will be removed.
 REM This line will be removed.
 </codeblock>
@@ -257,7 +268,7 @@ would both result in
 <codeblock>
 REM >Example
 REM
-REM This is the end of the end of the head comment.
+REM This is the end of the head comment.
 PRINT "Hello World!"
 </codeblock>
 
@@ -321,7 +332,7 @@ String constants must be enclosed by double quotes (&quot;...&quot;), and a pair
 
 <subhead title="Warnings">
 
-Warnings are generated during linking and tokenization when an event occurs which the users should be aware of but which may well not prevent the tokenized program from working.
+Warnings are generated during linking and tokenization when an event occurs which the user should be aware of but which may well not prevent the tokenized program from working.
 
 <definition target="Constant variable assignment to &lt;variable&gt; removed">
 A variable defined on the command line has been found as the target of an assignment, resulting in the entire statement being removed.
@@ -345,6 +356,10 @@ or it could be more subtle. In this example
 </codeblock>
 
 the default <param>-increment</param> of 10 will result in the two intermediate lines being given numbers of 20 and 30. By the time the <code>PRINT</code> statement is reached, the line 20 would need to be 41 or greater.
+</definition>
+
+<definition target="SYS &lt;name&gt; not found on lookup">
+If the <param>-swi</param> option is in force, <cite>Tokenize</cite> failed to find a match for a textual SWI name &lt;name&gt; and therefore could not convert it into numeric form. This could be due to an error in the source file, or it could be because the name does not appear in the lookup table used by <cite>Tokenize</cite>. On RISC&nbsp;OS this could be as a result of the module providing the SWI not being loaded; if SWI definitions have been supplied via the <param>-swis</param> option (on all platforms), then it means that the SWI is not defined in these.
 </definition>
 
 <definition target="Unisolated LIBRARY not linked">
