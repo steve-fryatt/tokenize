@@ -39,7 +39,7 @@ The source for <cite>Tokenize</cite> can be found alongside this binary download
 
 In addition to tokenizing files, <cite>Tokenize</cite> can link multiple library files into a single output &ndash; both by passing multiple source files on the command line and by processing (and removing) <code>LIBRARY</code> statements found in the source.
 
-Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output.
+Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output, and convert textual <code>SYS</code> names into their numeric equivalents.
 
 Be aware that <cite>Tokenize</cite> is <strong>not</strong> a BASIC syntax checker. While it will check some aspects of syntax that it requires to do its job, it will not verify that a program is completely syntactically correct and that it will load into the BASIC Interpreter and execute as intended.
 
@@ -189,11 +189,33 @@ being produced.
 
 <subhead title="SWI Number Conversion">
 
-When tokenising a BASIC program, <cite>Tokenize</cite> can convert any SWI names used in <code>SYS<code> commands into numeric constants &ndash; removing the need for the BASIC interpreter to look them up when the program is runs. To perform this operation, use the <param>-swi</param> parameter.
+When tokenising a BASIC program, <cite>Tokenize</cite> can convert any SWI names used in <code>SYS</code> commands into numeric constants &ndash; removing the need for the BASIC interpreter to look them up when the program is run. To perform this operation, use the <param>-swi</param> parameter on the command line.
 
 When running on RISC&nbsp;OS, <cite>Tokenize</cite> will look the SWI names up with the help of the operating system: as with any other BASIC cruncher, the modules used to provide any extension SWIs must be loaded when the tokenisation happens, or the names will be left in place (with a warning).
 
-When running on other platforms, the option of looking up SWI names via the OS is not available. <cite>Tokenize</cite> can read the details from suitable C header files: <file>swis.h</file> that comes with GCC and Acorn&nbsp;C is a good option.
+When running on other platforms, the option of looking up SWI names via the OS is not available. Instead, <cite>Tokenize</cite> can read the details from suitable C header files: <file>swis.h</file> that comes with GCC and Acorn&nbsp;C is a good option. While it can not parse the files in the same way that a C preprocessor would, <cite>Tokenize</cite> will look for any <code>#define</code> lines which appear to be followed by a valid SWI name and number combination; for example
+
+<codeblock>
+#define OS_WriteC    0x000000
+#define OS_WriteS    0x000001
+#define OS_Write0    0x000002
+</codeblock>
+
+The X versions of SWIs are inferred from their &lsquo;non-X&rsquo; forms, and vice versa: the three <code>#define</code> statements above would implicitly add
+
+<codeblock>
+#define XOS_WriteC   0x020000
+#define XOS_WriteS   0x020001
+#define XOS_Write0   0x020002
+</codeblock>
+
+at the same time. Were the X versions encountered first, the &lsquo;non-X&rsquo; versions would instead be added implicitly. 
+
+Files containing SWI names should be passed to <cite>Tokenize</cite> using the <param>-swis</param> parameter. When used alongside the GCCSDK, it may be possible to access it via the GCCSDK environment variables &ndash; for example:
+
+<codeblock>
+-swis $GCCSDK_INSTALL_CROSSBIN/../arm-unknown-riscos/include/swis.h
+</codeblock>
 
 
 <subhead title="Indentation and Crunching">
