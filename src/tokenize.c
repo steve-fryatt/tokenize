@@ -187,10 +187,14 @@ int main(int argc, char *argv[])
 				option_data = options->data;
 
 				while (option_data != NULL) {
-					if (option_data->value.string != NULL)
-						swi_add_header_file(option_data->value.string);
-					else
+					if (option_data->value.string != NULL) {
+						if (!swi_add_header_file(option_data->value.string)) {
+							msg_report(MSG_SWI_LOAD_FAIL, option_data->value.string);
+							return EXIT_FAILURE;
+						}
+					} else {
 						param_error = NULL;
+					}
 					option_data = option_data->next;
 				}
 #endif
@@ -277,15 +281,15 @@ int main(int argc, char *argv[])
 		printf(" -tab <n>               Set the tab column with to <n> spaces.\n");
 		printf(" -verbose               Generate verbose process information.\n");
 
-		return (output_help) ? 0 : 1;
+		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 
 	/* Run the tokenisation. */
 
 	if (!tokenize_run_job(output_file, &parse_options) || msg_errors())
-		return 1;
+		return EXIT_FAILURE;
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 
 

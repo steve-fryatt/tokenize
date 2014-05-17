@@ -77,7 +77,8 @@ static struct msg_data msg_messages[] = {
 	{MSG_INFO,	"Queue 'LIBRARY \"%s\"' for linking",		true	},
 	{MSG_WARNING,	"Unisolated LIBRARY not linked",		true	},
 	{MSG_WARNING,	"Variable LIBRARY not linked",			true	},
-	{MSG_WARNING,	"SYS \"%s\" not found on lookup",		true	}
+	{MSG_WARNING,	"SYS \"%s\" not found on lookup",		true	},
+	{MSG_ERROR,	"Failed to load SWI file '%s'",			false	}
 };
 
 static char	msg_location[MSG_MAX_LOCATION_TEXT];
