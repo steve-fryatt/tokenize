@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
 		printf(" -help                  Produce this help information.\n");
 		printf(" -increment <n>         Set the AUTO line number increment to <n>.\n");
 		printf(" -link                  Link files from LIBRARY statements.\n");
-		printf(" -out <file>            Write tokenised basic to file <out>.\n");
+		printf(" -out <file>            Write tokenized basic to file <out>.\n");
 #ifdef LINUX
 		printf(" -path <name>:<path>    Set path variable <name> to <path>.\n");
 #endif
