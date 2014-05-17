@@ -828,6 +828,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 				if (swi_number != -1)
 					*write = string_start + snprintf(string_start, 9, "&%X", swi_number);
+				else
+					msg_report(MSG_SWI_LOOKUP_FAIL, library_path);
 			}
 
 			statement_start = false;

@@ -39,7 +39,7 @@
  * \return		The SWI number, or -1 if not found.
  */
 
-int swi_get_number_from_name(char *name);
+long swi_get_number_from_name(char *name);
 
 
 /**
