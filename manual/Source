@@ -39,7 +39,7 @@ The source for <cite>Tokenize</cite> can be found alongside this binary download
 
 In addition to tokenizing files, <cite>Tokenize</cite> can link multiple library files into a single output &ndash; both by passing multiple source files on the command line and by processing (and removing) <code>LIBRARY</code> statements found in the source.
 
-Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output, and convert textual <code>SYS</code> names into their numeric equivalents.
+Finally, <cite>Tokenize</cite> can perform the actions of the BASIC <code>CRUNCH</code> command on the tokenized output, substitute &lsquo;constant&rsquo; variables with values passed in on the command-line, and convert textual <code>SYS</code> names into their numeric equivalents.
 
 Be aware that <cite>Tokenize</cite> is <strong>not</strong> a BASIC syntax checker. While it will check some aspects of syntax that it requires to do its job, it will not verify that a program is completely syntactically correct and that it will load into the BASIC Interpreter and execute as intended.
 
