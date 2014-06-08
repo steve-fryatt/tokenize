@@ -779,7 +779,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			library_path_due = false;
 			swi_name_due = false;
 			clean_to_end = false;
-		} else if (*assembler == true && !assembler_comment && **read == ';') {
+		} else if (*assembler == true && !assembler_comment && (**read == ';' || **read == '\\')) {
 			/* An assembler comment, so parsing needs to relax. */
 			assembler_comment = true;
 			*(*write)++ = *(*read)++;
