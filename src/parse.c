@@ -623,9 +623,6 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 			 */
 
 			switch (status) {
-			case PARSE_ERROR_OPEN_STRING:
-				msg_report(MSG_BAD_STRING);
-				break;
 			case PARSE_ERROR_DELETED_STATEMENT:
 				msg_report(MSG_BAD_DELETE);
 				break;
@@ -813,7 +810,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			long swi_number;
 			
 			if (!parse_process_string(read, write, (library_path_due == true || swi_name_due == true) ? library_path : NULL) && !assembler_comment)
-				return PARSE_ERROR_OPEN_STRING;
+				msg_report(MSG_BAD_STRING);
 
 			clean_to_end = false;
 

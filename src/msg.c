@@ -72,7 +72,7 @@ static struct msg_data msg_messages[] = {
 	{MSG_WARNING,	"Line number %u out of sequence",		true	},
 	{MSG_ERROR,	"Line too long",				true	},
 	{MSG_ERROR,	"Invalid line number constant",			true	},
-	{MSG_ERROR,	"Unterminated string",				true	},
+	{MSG_WARNING,	"Unterminated string",				true	},
 	{MSG_ERROR,	"Misformed deleted statement",			true	},
 	{MSG_INFO,	"Queue 'LIBRARY \"%s\"' for linking",		true	},
 	{MSG_WARNING,	"Unisolated LIBRARY not linked",		true	},

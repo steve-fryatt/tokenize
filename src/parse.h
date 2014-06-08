@@ -70,10 +70,9 @@ enum parse_status {
 	PARSE_WHITESPACE = 1,			/**< The statement consisted entirely of whitespace.	*/
 	PARSE_COMMENT = 2,			/**< The statement was a comment.			*/
 	PARSE_COMPLETE = 3,			/**< The statement was none of the above.		*/
-	PARSE_ERROR_OPEN_STRING = 256,		/**< Error: unterminated string.			*/
-	PARSE_ERROR_DELETED_STATEMENT = 257,	/**< Error: unclean deleted statement.			*/
-	PARSE_ERROR_LINE_CONSTANT = 258,	/**< Error: line number constant out of range.		*/
-	PARSE_ERROR_TOO_LONG = 259		/**< Error: line too long.				*/
+	PARSE_ERROR_DELETED_STATEMENT = 256,	/**< Error: unclean deleted statement.			*/
+	PARSE_ERROR_LINE_CONSTANT = 257,	/**< Error: line number constant out of range.		*/
+	PARSE_ERROR_TOO_LONG = 258		/**< Error: line too long.				*/
 };
 
 /**
