@@ -347,10 +347,6 @@ LIBRARY &quot;LibFile&quot; ELSE
 would cause this error. Note that code which would raise this specific error &ndash; as opposed to warnings relating to the processing of <code>LIBRARY</code> commands &ndash; would almost certainly raise a Syntax Error from BASIC itself, anyway.
 </definition>
 
-<definition target="Unterminated string">
-String constants must be enclosed by double quotes (&quot;...&quot;), and a pair of double quotes (&quot;&quot;) together in a string is treated as a single double quote. <cite>Tokenize</cite> will raise an error if it reaches the end of a line in a source file whilst thinking that it is still inside a string.
-</definition>
-
 
 <subhead title="Warnings">
 
@@ -394,6 +390,10 @@ ENDIF
 </codeblock>
 
 would be linked, but might have some unexpected consequences.
+</definition>
+
+<definition target="Unterminated string">
+String constants must be enclosed by double quotes (&quot;...&quot;), and a pair of double quotes (&quot;&quot;) together in a string is treated as a single double quote. <cite>Tokenize</cite> will raise a warning if it reaches the end of a line in a source file whilst thinking that it is still inside a string. Generally unterminated strings should be avoided, but in some circumstances it is possible to write (bad) code which BASIC will accept despite them being present &ndash; for this reason, their presence does not raise an error.
 </definition>
 
 <definition target="Variable LIBRARY not linked">
