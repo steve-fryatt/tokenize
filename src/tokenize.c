@@ -53,8 +53,8 @@
 #define MAX_INPUT_LINE_LENGTH 1024
 #define MAX_LOCATION_TEXT 256
 
-bool tokenize_run_job(char *output_file, struct parse_options *options);
-bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options);
+static bool tokenize_run_job(char *output_file, struct parse_options *options);
+static bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options);
 static char *tokenize_fgets(char *line, size_t len, FILE *file);
 
 int main(int argc, char *argv[])
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
  * \return		True on success; false on failure.
  */
 
-bool tokenize_run_job(char *output_file, struct parse_options *options)
+static bool tokenize_run_job(char *output_file, struct parse_options *options)
 {
 	FILE		*in, *out;
 	int		line_number = -1;
@@ -348,7 +348,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
  * \return		True on success; false if an error occurred.
  */
 
-bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
+static bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
 {
 	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file;
 	bool		assembler = false;
