@@ -399,7 +399,7 @@ static bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct pa
 static char *tokenize_fgets(char *line, size_t len, FILE *file)
 {
 	register int c;
-	register char* cs = line;
+	register char *cs = line;
 
 	while(--len > 0 && (c = getc(file)) != EOF) {
 		if((*cs++ = c) == '\n')
