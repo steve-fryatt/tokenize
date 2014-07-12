@@ -1106,7 +1106,8 @@ static enum parse_keyword parse_match_token(char **buffer)
 
 		/* Process the result. */
 
-		if (*test == '.' && *match != '\0' && ((test - start) >= parse_keywords[keyword].abbrev)) {
+		if (*test == '.' && *match != '\0' && ((test - start) >= parse_keywords[keyword].abbrev) &&
+				(!parse_keywords[keyword].var_start || !parse_is_name_body(*(test + 1)))) {
 			/* If we've hit a . in the string to be matched, then
 			 * the characters before it must match the start of the
 			 * keyword. If enough have passed to give us the minimum
