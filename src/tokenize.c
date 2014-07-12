@@ -55,6 +55,7 @@
 
 bool tokenize_run_job(char *output_file, struct parse_options *options);
 bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options);
+static char *tokenize_fgets(char *line, size_t len, FILE *file);
 
 int main(int argc, char *argv[])
 {
@@ -349,7 +350,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 
 bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
 {
-	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file, *p;
+	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file;
 	bool		assembler = false;
 	unsigned	input_line = 0;
 
@@ -363,20 +364,7 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 	if (options->verbose_output)
 		printf("Processing source file '%s'\n", file);
 
-	while (fgets(line, MAX_INPUT_LINE_LENGTH - 1, in) != NULL) {
-		/* Make sure that there's a terminating \n\0 on the line, even
-		 * if this was that last line in the file and there wasn't a \n
-		 * at the end of it. We leave a spare byte in the line buffer to
-		 * allow the \n to be added if necessary.
-		 */
-
-		for (p = line; p < (line + MAX_INPUT_LINE_LENGTH - 1) && *p != '\0'; p++) ;
-
-		if (*(p - 1) != '\n') {
-			*p++ = '\n';
-			*p = '\0';
-		}
-
+	while (tokenize_fgets(line, MAX_INPUT_LINE_LENGTH - 1, in) != NULL) {
 		msg_set_location(++input_line, file);
 
 		tokenised = parse_process_line(line, options, &assembler, line_number);
@@ -395,5 +383,35 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 	}
 
 	return true;
+}
+
+
+/**
+ * Perform as fgets(), but ensures that even the last line of the file has a
+ * terminating \n even if there wasn't one in the file itself.
+ *
+ * \param *s		Pointer to buffer to take the next line of the file.
+ * \param len		The length of the supplied buffer.
+ * \param *file		The file handle to read from.
+ * \return		Pointer to the buffer, or NULL if no data was read.
+ */
+
+static char *tokenize_fgets(char *line, size_t len, FILE *file)
+{
+	register int c;
+	register char* cs = line;
+
+	while(--len > 0 && (c = getc(file)) != EOF) {
+		if((*cs++ = c) == '\n')
+			break;          
+	}
+
+	/* If we've reached EOF and the line didn't end with \n, put one in. */
+
+	if (c == EOF && cs > line && len > 0 && *(cs - 1) != '\n')
+		*cs++ = '\n';
+
+	*cs = '\0';
+	return (c == EOF && cs == line) ? NULL : line;
 }
 
