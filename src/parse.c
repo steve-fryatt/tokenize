@@ -27,6 +27,11 @@
  * Basic line parser, implementation.
  */
 
+/* NB: Unlike C, BASIC's lines are \n terminated. All line end tests in parse.c
+ * look for \n and not \0 (\0 being valid in strings within BASIC). Therefore
+ * all data passed into the parser must terminate with \n or \n\0.
+ */
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -469,7 +474,10 @@ static bool parse_is_name_body(char c);
  * Parse a line of BASIC, returning a pointer to the tokenised form which will
  * remain valid until the function is called again.
  *
- * \param *line		Pointer to the line to process,
+ * BASIC lines are always \n terminated, not \0 as is conventional. \0 is a valid
+ * character within a BASIC line!
+ *
+ * \param *line		Pointer to the line to process, which is \n terminated.
  * \param *options	Parse options block to set the configuration
  * \param *assembler	Pointer to a boolean which is TRUE if we are in an
  *			assember section and FALSE otherwise; updated on exit.
@@ -1409,7 +1417,7 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
 
 static void parse_process_to_line_end(char **read, char **write)
 {
-	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n') && (**read != '\r') && (**read != '\0'))
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n'))
 		*(*write)++ = *(*read)++;
 }
 
