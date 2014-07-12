@@ -349,7 +349,7 @@ bool tokenize_run_job(char *output_file, struct parse_options *options)
 
 bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_options *options)
 {
-	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file;
+	char		line[MAX_INPUT_LINE_LENGTH], *tokenised, *file, *p;
 	bool		assembler = false;
 	unsigned	input_line = 0;
 
@@ -363,7 +363,20 @@ bool tokenize_parse_file(FILE *in, FILE *out, int *line_number, struct parse_opt
 	if (options->verbose_output)
 		printf("Processing source file '%s'\n", file);
 
-	while (fgets(line, MAX_INPUT_LINE_LENGTH, in) != NULL) {
+	while (fgets(line, MAX_INPUT_LINE_LENGTH - 1, in) != NULL) {
+		/* Make sure that there's a terminating \n\0 on the line, even
+		 * if this was that last line in the file and there wasn't a \n
+		 * at the end of it. We leave a spare byte in the line buffer to
+		 * allow the \n to be added if necessary.
+		 */
+
+		for (p = line; p < (line + MAX_INPUT_LINE_LENGTH - 1) && *p != '\0'; p++) ;
+
+		if (*(p - 1) != '\n') {
+			*p++ = '\n';
+			*p = '\0';
+		}
+
 		msg_set_location(++input_line, file);
 
 		tokenised = parse_process_line(line, options, &assembler, line_number);
