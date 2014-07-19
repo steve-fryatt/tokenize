@@ -130,8 +130,8 @@ void variable_dump_list(void)
  * Add a constant definition in the form of a single name=value string, such as
  * would be obtained from the command-line.
  *
- * \param *constant	Pointer to the defintion string.
- * \return		True on success; else false;
+ * \param *constant		Pointer to the defintion string.
+ * \return			True on success; else false;
  */
 
 bool variable_add_constant_combined(char *constant)
@@ -162,9 +162,9 @@ bool variable_add_constant_combined(char *constant)
  * Add a constant variable definition. These are pre-defined, and whenever one
  * is encountered in a program it will be replaced by its value.
  *
- * \param *name		Pointer to the variable's name.
- * \param *value	Pointer to the variable's value.
- * \return		True if successful; else false.
+ * \param *name			Pointer to the variable's name.
+ * \param *value		Pointer to the variable's value.
+ * \return			True if successful; else false.
  */
 
 bool variable_add_constant(char *name, char *value)
@@ -220,11 +220,12 @@ bool variable_add_constant(char *name, char *value)
  *
  * - Variables on the right-hand side are replaced by their constant value.
  *
- * \param *name		Pointer to the start of the variable name in the output
- *			buffer.
- * \param **write	Pointer to the output buffer write pointer, which will
- *			be updated on exit.
- * \return		True if the variable is being assigned to, else false.
+ * \param *name			Pointer to the start of the variable name in the output
+ *				buffer.
+ * \param **write		Pointer to the output buffer write pointer, which will
+ *				be updated on exit.
+ * \param statement_left	True if this is an assignment; False for a read.
+ * \return			True if the variable is being assigned to, else false.
  */
 
 bool variable_process(char *name, char **write, bool statement_left)
@@ -267,10 +268,10 @@ bool variable_process(char *name, char **write, bool statement_left)
  * Write a variable's value out into a buffer, starting at the specified point
  * and updating the line pointer when done.
  *
- * \param *variable	Pointer to the variable to be substituted.
- * \param *name		Pointer to the start location in the write buffer.
- * \param **write	Pointer to the buffer position pointer, to be updated
- *			after the substitution is completed.
+ * \param *variable		Pointer to the variable to be substituted.
+ * \param *name			Pointer to the start location in the write buffer.
+ * \param **write		Pointer to the buffer position pointer, to be updated
+ *				after the substitution is completed.
  */
 
 static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write)
@@ -316,8 +317,8 @@ static void variable_substitute_constant(struct variable_entry *variable, char *
 /**
  * Create a new variable, returning a pointer to its data block.
  *
- * \param *name		Pointer to the name to use for the new variable.
- * \return		Pointer to the newly created block, or NULL on failure.
+ * \param *name			Pointer to the name to use for the new variable.
+ * \return			Pointer to the newly created block, or NULL on failure.
  */
 
 static struct variable_entry *variable_create(char *name)
@@ -366,8 +367,8 @@ static struct variable_entry *variable_create(char *name)
  * and testing it against the permissable characters. VARIABLE_UNKNOWN is
  * returned if the character isn't valid.
  *
- * \param *name		The name to test.
- * \return		The type indicated by the name.
+ * \param *name			The name to test.
+ * \return			The type indicated by the name.
  */
 
 static enum variable_type variable_find_type(char *name)
@@ -400,8 +401,8 @@ static enum variable_type variable_find_type(char *name)
 /**
  * Given a variable name, find its record if one exists.
  *
- * \param *name		Pointer to the variable's name.
- * \return		Pointer to the variable's record, or NULL if not found.
+ * \param *name			Pointer to the variable's name.
+ * \return			Pointer to the variable's record, or NULL if not found.
  */
 
 static struct variable_entry *variable_find(char *name)
@@ -428,8 +429,8 @@ static struct variable_entry *variable_find(char *name)
 /**
  * Return the index for a given variable name.
  *
- * \param *name		Pointer to the name to index.
- * \return		The index from the name.
+ * \param *name			Pointer to the name to index.
+ * \return			The index from the name.
  */
 
 static int variable_find_index(char *name)

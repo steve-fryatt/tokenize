@@ -51,8 +51,8 @@ void variable_dump_list(void);
  * Add a constant definition in the form of a single name=value string, such as
  * would be obtained from the command-line.
  *
- * \param *constant	Pointer to the defintion string.
- * \return		True on success; else false;
+ * \param *constant		Pointer to the defintion string.
+ * \return			True on success; else false;
  */
 
 bool variable_add_constant_combined(char *constant);
@@ -62,9 +62,9 @@ bool variable_add_constant_combined(char *constant);
  * Add a constant variable definition. These are pre-defined, and whenever one
  * is encountered in a program it will be replaced by its value.
  *
- * \param *name		Pointer to the variable's name.
- * \param *value	Pointer to the variable's value.
- * \return		True if successful; else false.
+ * \param *name			Pointer to the variable's name.
+ * \param *value		Pointer to the variable's value.
+ * \return			True if successful; else false.
  */
 
 bool variable_add_constant(char *name, char *value);
@@ -79,11 +79,12 @@ bool variable_add_constant(char *name, char *value);
  *
  * - Variables on the right-hand side are replaced by their constant value.
  *
- * \param *name		Pointer to the start of the variable name in the output
- *			buffer.
- * \param **write	Pointer to the output buffer write pointer, which will
- *			be updated on exit.
- * \return		True if the variable is being assigned to, else false.
+ * \param *name			Pointer to the start of the variable name in the output
+ *				buffer.
+ * \param **write		Pointer to the output buffer write pointer, which will
+ *				be updated on exit.
+ * \param statement_left	True if this is an assignment; False for a read.
+ * \return			True if the variable is being assigned to, else false.
  */
 
 bool variable_process(char *name, char **write, bool statement_left);
