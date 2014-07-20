@@ -929,7 +929,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_RESTORE:
 			case KWD_THEN:
 			case KWD_TRACE:
-				constant_due = true;
+				/* TRACE doesn't take constants when used as a function on the
+				 * right (eg. BPUT#TRACE,2 wouldn't constantise the 2).
+				 */
+				if (statement_left || token != KWD_TRACE)
+					constant_due = true;
 				break;
 			case KWD_DEF:
 				definition_state = DEF_SEEN;
