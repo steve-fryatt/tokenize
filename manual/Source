@@ -311,7 +311,7 @@ The <param>w</param> and <param>W</param> options allow whitespace to be removed
 
 There are a number of error and warning messages that <cite>Tokenize</cite> can generate while running. These can indicate problems with the source BASIC code, or with the availability of files on disc, and are detailed here.
 
-In addition, adding the <param>-verbose</param> flag to the command line will cause <cite>Tokenize</cite> to produce additional information about what it is doing during linking and tokenizing.
+Using the <param>-warn</param> flag will turn on additional warnings relating to the structure of the source code. In addition, adding the <param>-verbose</param> flag to the command line will cause <cite>Tokenize</cite> to produce additional information about what it is doing during linking and tokenizing.
 
 <subhead title="Errors">
 
@@ -400,6 +400,22 @@ String constants must be enclosed by double quotes (&quot;...&quot;), and a pair
 A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize can not determine the name of the file and will therefore leave the statement in-situ.
 </definition>
 
+
+<subhead title="Optional Warnings">
+
+By using the <param>-warn</param> parameter on the command line, <cite>Tokenize</cite> will emit additional warnings relating to the structure of the source code. At present, the only options are <param>-warn&nbsp;p</param> and <param>-warn&nbsp;P</param>, which perform checks on the function and procedure definitions within the code.
+
+<definition target="No definition found for &lt;name&gt;">
+This warning, which will be generated if <param>-warn&nbsp;p</param> or <param>-warn&nbsp;P</param> is included on the command line, indicates that the source contains <code>FN</code> or <code>PROC</code> calls for which <code>DEF</code> statements have not been seen. These warnings are likely to be spurious unless libraries are being linked by <cite>Tokenize</cite>.
+</definition>
+
+<definition target="&lt;name&gt; defined more than once">
+Also generated if <param>-warn&nbsp;p</param> or <param>-warn&nbsp;P</param> is passed on the command line, this warning indicates that two or more <code>DEF</code> statements have been found for the same <code>FN</code> or <code>PROC</code> name.
+</definition>
+
+<definition target="&lt;name&gt; is defined but not used">
+This warning is only generated if <param>-warn&nbsp;P</param> is included on the command line, and indicates that a <code>DEF</code> statement has been found for an <code>FN</code> or <code>PROC</code> which is never called from within the source code.
+</definition>
 
 </chapter>
 
