@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 					if (option_data->value.string != NULL)
 						variable_add_constant_combined(option_data->value.string);
 					else
-						param_error = NULL;
+						param_error = true;
 					option_data = option_data->next;
 				}
 			}
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 							return EXIT_FAILURE;
 						}
 					} else {
-						param_error = NULL;
+						param_error = true;
 					}
 					option_data = option_data->next;
 				}
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 					if (option_data->value.string != NULL)
 						library_add_path_combined(option_data->value.string);
 					else
-						param_error = NULL;
+						param_error = true;
 					option_data = option_data->next;
 				}
 #endif
