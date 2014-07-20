@@ -44,6 +44,7 @@
 
 #include "library.h"
 #include "msg.h"
+#include "proc.h"
 #include "swi.h"
 #include "variable.h"
 
@@ -455,6 +456,25 @@ static enum parse_keyword parse_keyword_index[] = {
 	KWD_NO_MATCH	/**< Z	*/
 };
 
+
+/**
+ * States to allow tracking of DEF and SYS statements.
+ */
+
+enum parse_def_state {
+	DEF_NONE,		/**< We haven't seen a DEF yet.						*/
+	DEF_SEEN,		/**< We've seen a DEF and are processing the PROC/FN name.		*/
+	DEF_NAME,		/**< We've seen the PROC/FN name, and are waiting for parameters.	*/
+	DEF_PARAMS		/**< We've seen a DEF and an opening (, so are in the parameters.	*/
+};
+
+enum parse_sys_state {
+	SYS_NONE,		/**< We haven't seen a SYS yet.						*/
+	SYS_NAME,		/**< We've seen a SYS, and are waiting for the name or number.		*/
+	SYS_INPUT,		/**< We've seen the number, and are processing inputs.			*/
+	SYS_OUTPUT		/**< We've seen the TO, and are processing outputs.			*/
+};
+
 static char parse_buffer[PARSE_BUFFER_LEN];
 static char library_path[PARSE_BUFFER_LEN];
 
@@ -730,10 +750,12 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool			statement_left = true;		/**< True while we're in "left-side" mode for tokens.			*/
 	bool			constant_due = line_start;	/**< True if a line number constant could be coming up.			*/
 	bool			library_path_due = false;	/**< True if we're expecting a library path.				*/
-	bool			swi_name_due = false;		/**< True if we're expecting a SWI name.				*/
 	bool			clean_to_end = false;		/**< True if no non-whitespace has been found since set.		*/
 	bool			no_clean_check = false;		/**< True if the clean_to_end check doesn't matter for deletion.	*/
 	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
+
+	enum parse_def_state	definition_state = DEF_NONE;	/**< We're not in a DEF PROC/DEF FN.					*/
+	enum parse_sys_state	sys_state = SYS_NONE;		/**< We're not in a SYS statement.					*/
 
 	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
 	int			extra_spaces = 0;		/**< Extra spaces taken up by expended keywords.			*/
@@ -761,7 +783,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && **read == ']' && bracket_count > 0) {
 			/* Close a matched [...] in assembler. */
@@ -773,7 +796,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && **read == ']') {
 			/* An unmatched ] in a statememt terminates the assember. */
@@ -785,7 +809,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (*assembler == true && !assembler_comment && (**read == ';' || **read == '\\')) {
 			/* An assembler comment, so parsing needs to relax. */
@@ -797,7 +822,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (**read == '[' && *assembler == false) {
 			/* This is the start of an assembler block. */
@@ -810,14 +836,15 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (**read == '\"') {
 			/* Copy strings as a lump, but not from assembler comments. */
 			char *string_start = *write;
 			long swi_number;
 			
-			if (!parse_process_string(read, write, (library_path_due == true || swi_name_due == true) ? library_path : NULL) && !assembler_comment)
+			if (!parse_process_string(read, write, (library_path_due == true || sys_state == SYS_NAME) ? library_path : NULL) && !assembler_comment)
 				msg_report(MSG_BAD_STRING);
 
 			clean_to_end = false;
@@ -828,7 +855,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				status = PARSE_DELETED;
 				if (options->verbose_output)
 					msg_report(MSG_QUEUE_LIB, library_path);
-			} else if (swi_name_due && *library_path != '\0' && options->convert_swis) {
+			} else if (sys_state == SYS_NAME && *library_path != '\0' && options->convert_swis) {
 				swi_number = swi_get_number_from_name(library_path);
 
 				if (swi_number != -1)
@@ -841,10 +868,13 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			line_start = false;
 			constant_due = false;
 			library_path_due = false;
-			swi_name_due = false;
+			if (sys_state == SYS_NAME)
+				sys_state = SYS_INPUT;
+			definition_state = DEF_NONE;
 		} else if (**read >= 'A' && **read <= 'Z' && (token = parse_match_token(read)) != KWD_NO_MATCH) {
 			/* Handle keywords */
-			unsigned bytes;
+			unsigned	bytes;
+			char		*fnproc_name;
 
 			/* ELSE needs to be tokenised differently if it is at the
 			 * start of a line. Oterwise what matters is if we're on
@@ -872,7 +902,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			}
 
 			library_path_due = false;
-			swi_name_due = false;
 			clean_to_end = false;
 
 			/* Move between left- and right-hand sides of expressions. */
@@ -902,9 +931,16 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_TRACE:
 				constant_due = true;
 				break;
+			case KWD_DEF:
+				definition_state = DEF_SEEN;
+				break;
 			case KWD_FN:
 			case KWD_PROC:
+				fnproc_name = *write;
 				parse_process_fnproc(read, write);
+				**write = '\0';
+				proc_process(fnproc_name, token == KWD_FN, definition_state == DEF_SEEN);
+				definition_state = DEF_NAME;
 				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
@@ -924,11 +960,17 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 					msg_report(MSG_SKIPPED_LIB);
 				break;
 			case KWD_SYS:
-				swi_name_due = true;
+				sys_state = SYS_NAME;
 				break;
+			case KWD_TO:
+				if (sys_state == SYS_INPUT)
+					sys_state = SYS_OUTPUT;
 			default:
 				break;
 			}
+
+			if (token != KWD_DEF && token != KWD_FN && token != KWD_PROC && (token != KWD_RETURN || definition_state != DEF_PARAMS))
+				definition_state = DEF_NONE;
 
 			statement_start = false;
 			line_start = false;
@@ -941,7 +983,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-			swi_name_due = false;
+			sys_state = SYS_NONE;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read == '_') || (**read == '`')) {
 			/* Handle variable names */
@@ -951,8 +994,23 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			if (library_path_due && options->link_libraries)
 				msg_report(MSG_VAR_LIB);
 
+			/* A variable is considered to be getting assigned to if:
+			 * - it's on statement left,
+			 * - it falls within the parameters of an FN or PROC,
+			 * - it follows SYS ... TO, or
+			 * - it's at the start of an assembler statement and is preceeded by a .
+			 *
+			 * This is broken, as it does not take into account any of
+			 * FOR, DIM, INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
+			 * or the use of !, ?, $ and | indirection operators.
+			 *
+			 * In addition, many assembler nemonics are treated as variables.
+			 */
+
 			**write = '\0';
-			if (variable_process(variable_name, write, statement_left)) {
+			if (variable_process(variable_name, write, statement_left ||
+					definition_state == DEF_PARAMS || sys_state == SYS_OUTPUT ||
+					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
 				status = PARSE_DELETED;
 				no_clean_check = true;
@@ -963,7 +1021,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_left = false;
 			line_start = false;
 			library_path_due = false;
-			swi_name_due = false;
+			if (sys_state == SYS_NAME)
+				sys_state = SYS_INPUT;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
@@ -975,7 +1035,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-			swi_name_due = false;
+			if (sys_state == SYS_NAME)
+				sys_state = SYS_INPUT;
+			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (**read == '*' && statement_left) {
 			/* It's a star command, so run out to the end of the line. */
@@ -992,7 +1054,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_start = false;
 			line_start = false;
 			library_path_due = false;
-			swi_name_due = false;
 			clean_to_end = false;
 
 			/* Whitespace or commas are the only valid things separating
@@ -1004,6 +1065,22 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				constant_due = false;
 				statement_left = false;
 			}
+
+			/* Following DEF PROC/FN, we track the line status:
+			 * - '(' puts us into parameter mode, after which
+			 * - ')' will take us out of DEF mode altrogether, and
+			 * - anything outside of parameter mode will also exit.
+			 *
+			 * Whitespace is ignored, as the interpreter seems OK
+			 * with something like "DEF PROCfoo (bar%)".
+			 */
+
+			if (definition_state == DEF_NAME && **read == '(')
+				definition_state = DEF_PARAMS;
+			else if (definition_state == DEF_PARAMS && **read == ')')
+				definition_state = DEF_NONE;
+			else if (definition_state != DEF_PARAMS)
+				definition_state = DEF_NONE;
 
 			/* Copy the character to the output. */
 

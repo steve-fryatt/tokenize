@@ -41,10 +41,10 @@ void variable_initialise(void);
 
 
 /**
- * Dump a list of known variables to stdout.
+ * Generate a report on the variable information.
  */
 
-void variable_dump_list(void);
+void variable_report(void);
 
 
 /**

@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h> // \TODO -- Debug; remove!
+#include <stdio.h>
 
 /* Local source headers. */
 
@@ -99,29 +99,29 @@ void variable_initialise(void)
 
 
 /**
- * Dump a list of known variables to stdout.
+ * Generate a report on the variable information.
  */
 
-void variable_dump_list(void)
+void variable_report(void)
 {
-	int			i;
+	int			index;
 	struct variable_entry	*list;
 
-	for (i = 0; i < VARIABLE_INDEXES; i++) {
-		if (variable_list[i] == NULL)
+	for (index = 0; index < VARIABLE_INDEXES; index++) {
+		if (variable_list[index] == NULL)
 			continue;
 
-		printf("Variables Starting With %c\n-------------------------\n", i);
-
-		list = variable_list[i];
+		list = variable_list[index];
 
 		while (list != NULL) {
-			if (list->name != NULL)
-				printf("%s => assigned %d, read %d\n", list->name, list->assignments, list->reads);
+			if (list->name == NULL)
+				continue;
+
+			if (list->assignments == 0 && list->reads > 0)
+				msg_report(MSG_VAR_MISSING_DEF, list->name);
+
 			list = list->next;
 		}
-
-		printf("\n");
 	}
 }
 

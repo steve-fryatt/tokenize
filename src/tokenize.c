@@ -41,6 +41,7 @@
 #include "library.h"
 #include "msg.h"
 #include "parse.h"
+#include "proc.h"
 #include "swi.h"
 #include "variable.h"
 
@@ -61,6 +62,9 @@ int main(int argc, char *argv[])
 {
 	bool			param_error = false;
 	bool			output_help = false;
+	bool			report_vars = false;
+	bool			report_procs = false;
+	bool			report_unused_procs = false;
 	struct args_option	*options;
 	struct args_data	*option_data;
 	char			*output_file = NULL;
@@ -83,13 +87,14 @@ int main(int argc, char *argv[])
 	parse_options.crunch_whitespace = false;
 	parse_options.crunch_all_whitespace = false;
 
-	/* Initialise the variable handler. */
+	/* Initialise the variable and procedure handlers. */
 
+	proc_initialise();
 	variable_initialise();
 
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,swis/KM,tab/IK,crunch/K,verbose/S,help/S");
+	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,swis/KM,tab/IK,crunch/K,warn/K,verbose/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -241,6 +246,24 @@ int main(int argc, char *argv[])
 		} else if (strcmp(options->name, "tab") == 0) {
 			if (options->data != NULL)
 				parse_options.tab_indent = options->data->value.integer;
+		} else if (strcmp(options->name, "warn") == 0) {
+			if (options->data != NULL) {
+				char *mode = options->data->value.string;
+
+				while (mode != NULL && *mode != '\0') {
+					switch (*mode++) {
+					case 'P':
+						report_unused_procs = true;
+					case 'p':
+						report_procs = true;
+						break;
+					case 'V':
+					case 'v':
+						report_vars = true;
+						break;
+					}
+				}
+			}
 		}
 
 		options = options->next;
@@ -281,6 +304,8 @@ int main(int argc, char *argv[])
 #endif
 		printf(" -tab <n>               Set the tab column with to <n> spaces.\n");
 		printf(" -verbose               Generate verbose process information.\n");
+		printf(" -warn [P]              Control generation of information warnings.\n");
+		printf("                    P|p - Warn of unused|missing, multiple FN/PROC.\n");
 
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
@@ -289,6 +314,14 @@ int main(int argc, char *argv[])
 
 	if (!tokenize_run_job(output_file, &parse_options) || msg_errors())
 		return EXIT_FAILURE;
+
+	/* Run any reports. */
+
+	if (report_vars)
+		variable_report();
+
+	if (report_procs)
+		proc_report(report_unused_procs);
 
 	return EXIT_SUCCESS;
 }
