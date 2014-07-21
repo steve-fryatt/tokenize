@@ -421,6 +421,90 @@ This warning is only generated if <param>-warn&nbsp;P</param> is included on the
 
 
 
+<chapter title="Compatibility Issues">
+
+Since there&rsquo;s no definitive syntax for BBC&nbsp;BASIC, the performance of <cite>Tokenize</cite> has been tested against BASIC&rsquo;s <code>TEXTLOAD</code> command throughout development. The test base currently comprises over 3,300 files, of which at present less than 100 differ in their tokenised output when compared to the BASIC from RISC&nbsp;OS&nbsp;5.
+
+The following list details known areas that <cite>Tokenize</cite> differs from BASIC, or which may cause confusion. If you find any others, please get in touch (details at the end of this file) &ndash; short examples in ASCII format which exhibit the problem, plus the version of RISC&nbsp;OS and BASIC that were used, are very helpful in identifying issues. Please be aware that even different versions of BASIC tokenise some pieces of source code in different ways.
+
+
+<subhead title="Exponential numeric constants">
+BASIC&rsquo;s tokeniser does not recognise the exponential part of numeric constants of the form <code>1E6</code>, whereas <cite>Tokenize</cite> does. Both BASIC and <cite>Tokenize</cite> would treat the following statement in the same way
+
+<codeblock>
+IF A &lt; 1E6 THEN GOTO 20
+</codeblock>
+
+However, if the spaces are removed to give
+
+<codeblock>
+IFA&lt;1E6THENGOTO20
+</codeblock>
+
+then while <cite>Tokenize</cite> will still generate the expected code, BASIC would run the <code>E6</code> into <code>THEN</code> and prevent its tokenisation.
+
+While the behaviour of <cite>Tokenize</cite> differs from that of BASIC, it seems that it is actually more correct and so has been left in.
+
+
+<subhead title="Numeric constants for line numbers">
+BASIC treats numeric constants in its source differently depending on whether they are considered to be line numbers (such as the <code>100</code> in <code>GOTO&nbsp;100</code>) or just more general numeric expressions (such as the <code>42</code> in <code>L%=42</code>). While this distinction is generally handled correctly, the work done validating <cite>Tokenize</cite> has shown up a couple of confusing issues.
+
+BASIC prior to RISC&nbsp;OS&nbsp;5 (including, presumably, RISC&nbsp;OS&nbsp;6) can incorrectly treat numeric constants as line numbers when they follow <code>TRACE</code> in its function form. Thus affected versions of BASIC would parse
+
+<codeblock>
+BPUT#TRACE, 2
+</codeblock>
+
+and treat the <code>2</code> as a line number despite it being a numeric parameter to <code>BPUT</code>.
+
+A fix was implemented for this in RISC&nbsp;OS&nbsp;5, but it inadvertently prevented the recognition of other &ndash; valid &ndash; line number constants. One occurrence was conditional statements with the <code>THEN</code> omitted:
+
+<codeblock>
+IF A% = 0 GOTO 100
+</codeblock>
+
+would fail to spot the <code>100</code> as being a line number. There is a possibility that it also affected constants following <code>RESTORE</code> and <code>ON&nbsp;GOTO</code>-like constructs. A fix for this was implemented in RISC&nbsp;OS&nbsp;5 in June 2014, since when RISC&nbsp;OS&nbsp;5 BASIC and <cite>Tokenize</cite> appear to generate identical code.
+
+
+<subhead title="The QUIT keyword">
+The <code>QUIT</code> keyword has two standard forms: a statement with no parameters, and a function. As such, it can be used to start a variable name: the code
+
+<codeblock>
+QUITTING% = TRUE
+</codeblock>
+
+would set the variable <code>QUITTING%</code> to be <code>TRUE</code>. In RISC&nbsp;OS&nbsp;5, however, a third form has been added: a statment taking a single parameter (a value to pass back to the caller as a return code). This means that on RISC&nbsp;OS&nbsp;5, this line would tokenise as the keyword <code>QUIT</code> followed by the variable <code>TING%</code> and then a nonsensical <code>=&nbsp;TRUE</code>.
+
+<cite>Tokenize</cite> takes the same approach as RISC&nbsp;OS&nbsp;5, such that <code>QUIT</code> can not be used to start variable names.
+
+
+<subhead title="Control characters in string constants">
+In BASIC, it&rsquo;s valid to include non-printing control characters in string constants if you can find a way to insert them. <cite>Tokenize</cite> will honour any such characters that it finds within string constants, but &ndash; just as with BASIC&rsquo;s <code>TEXTLOAD</code> &ndash; the presence of a newline in a string constant will be seen as the end of the line. This will result in an unterminated string warning, and the very likely failure to parse the following line of the source.
+
+In general, the inclusion of raw non-printing characters in string constants is probably unwise: use can be made of <code>CHR$()</code> to avoid this problem. Similarly, the use of &lsquo;top-bit&rsquo; characters when manipulating BASIC source on other platforms may cause confusion unless care is taken with character sets. Again, the use of <code>CHR$()</code> can be helpful: such as
+
+<codeblock>
+PRINT CHR$(169);" John Smith"
+</codeblock>
+
+to include a copyright declaration, for example.
+
+
+<subhead title="Line numbers">
+BASIC&rsquo;s interpreter (as opposed to its tokeniser) is surprisingly relaxed about the use of line numbers if no reference is made to them (ie. if there are no <code>GOTO</code> or similar commands in the program). Duplicate line numbers are possible, as are non-sequential numbers (such as lines appearing, and being executed, in an order like 10, 30, 20, 40) &ndash; examples have even been seen where all the lines are numbered zero. The thing that all such BASIC programs share is the fact that they have been generated by some software other than BASIC itself (such as a BASIC linker, cruncher or automated source management tool).
+
+Unfortunately, this relaxed approach to line numbering does not extend to re-tokenising code which has been saved out with such numbers as text. BASIC&rsquo;s <code>TEXTLOAD</code> and <cite>Tokenize</cite> differ in their handling of such source files, but both will generate tokenised files which do not match the original code. In such cases, the only options are to renumber the source text files by hand, or to remove the numbers completely.
+
+
+<subhead title="Crunched code">
+Although not an issue specific to <cite>Tokenize</cite>, it&rsquo;s worth re-iterating that crunching BASIC can be a one-way operation. While BASIC&rsquo;s <code>CRUNCH</code> command and <cite>Tokenise</cite>&rsquo;s <param>-crunch</param> parameter take care to ensure that the code they generate is still valid in ASCII form, most of the third-party crunchers are not concerned with the need to edit the compacted code.
+
+Converting such code to text via <code>TEXTSAVE</code>, a text editor or similar, then passing it to either <code>TEXTLOAD</code> or <cite>Tokenize</cite> will often end in failure. The lack of spaces can easily result in keywords being mistaken for variables and vice versa &ndash; sometimes this will give a &ldquo;line too long&rdquo; error from the tokeniser; alternatively it may not show up until the affected parts of the program get executed by the interpreter.
+
+</chapter>
+
+
+
 <chapter title="Version History" file="History">
 
 Here is a list of the versions of <cite>Tokenize</cite>, along with all the changes made.
