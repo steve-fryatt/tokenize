@@ -523,7 +523,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	while (*read != '\n' && isspace(*read)) {
 		if (*read == '\t' && options->tab_indent > 0) {
-			leading_spaces = ((leading_spaces + 1) / options->tab_indent) + options->tab_indent;
+			leading_spaces = ((leading_spaces + options->tab_indent) / options->tab_indent) * options->tab_indent;
 		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
@@ -554,7 +554,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 
 	while (*read != '\n' && isspace(*read)) {
 		if (*read == '\t' && options->tab_indent > 0) {
-			leading_spaces = ((leading_spaces + 1) / options->tab_indent) + options->tab_indent;
+			leading_spaces = ((leading_spaces + options->tab_indent) / options->tab_indent) * options->tab_indent;
 		} else if (options->tab_indent > 0) {
 			leading_spaces++;
 		}
