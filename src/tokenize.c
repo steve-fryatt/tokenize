@@ -312,8 +312,10 @@ int main(int argc, char *argv[])
 
 	/* Run the tokenisation. */
 
-	if (!tokenize_run_job(output_file, &parse_options) || msg_errors())
+	if (!tokenize_run_job(output_file, &parse_options) || msg_errors()) {
+		remove(output_file);
 		return EXIT_FAILURE;
+	}
 
 	/* Run any reports. */
 
