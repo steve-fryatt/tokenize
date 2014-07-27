@@ -487,7 +487,7 @@ static bool parse_process_binary_constant(char **read, char **write, int *extra_
 static void parse_process_fnproc(char **read, char **write);
 static void parse_process_variable(char **read, char **write);
 static void parse_process_whitespace(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options);
-static void parse_process_to_line_end(char **read, char **write);
+static void parse_process_to_line_end(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options, bool expand_tabs);
 static bool parse_is_name_body(char c);
 
 /**
@@ -953,9 +953,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				} else {
 					status = PARSE_COMMENT;
 				}
+				parse_process_to_line_end(read, write, start_pos, *real_pos + extra_spaces, options, true);
+				break;
 			case KWD_EDIT:
 			case KWD_DATA:
-				parse_process_to_line_end(read, write);
+				parse_process_to_line_end(read, write, start_pos, *real_pos + extra_spaces, options, false);
 				break;
 			case KWD_LIBRARY:
 				if (statement_start)
@@ -1046,7 +1048,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if (**read == '*' && statement_left) {
 			/* It's a star command, so run out to the end of the line. */
 
-			parse_process_to_line_end(read, write);
+			parse_process_to_line_end(read, write, start_pos, *real_pos + extra_spaces, options, false);
 			clean_to_end = false;
 		} else if (isspace(**read)) {
 			/* Handle whitespace. */
@@ -1495,12 +1497,30 @@ static void parse_process_whitespace(char **read, char **write, char *start_pos,
  *
  * \param **read	Pointer to the current read pointer.
  * \param **write	Pointer to the current write pointer.
+ * \param *start_pos	Pointer to the start of the write buffer.
+ * \param extra_spaces	The number of extra spaces taken up by token expansion.
+ * \param *options	Pointer to the current options block.
+ * \param expand_tabs	True to expand tabs into spaces; False to leave.
  */
 
-static void parse_process_to_line_end(char **read, char **write)
+static void parse_process_to_line_end(char **read, char **write, char *start_pos, int extra_spaces, struct parse_options *options, bool expand_tabs)
 {
-	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n'))
-		*(*write)++ = *(*read)++;
+	int	insert;
+
+	while ((parse_output_length(*write) < MAX_LINE_LENGTH) && (**read != '\n')) {
+		if (expand_tabs && **read == '\t') {
+			insert = options->tab_indent - (((*write - start_pos) + extra_spaces) % options->tab_indent);
+			if (insert == 0)
+				insert = options->tab_indent;
+
+			for (; (parse_output_length(*write) < MAX_LINE_LENGTH) && insert > 0; insert--)
+				*(*write)++ = ' ';
+
+			(*read)++;
+		} else {
+			*(*write)++ = *(*read)++;
+		}
+	}
 }
 
 
