@@ -1064,17 +1064,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			/* Whitespace or commas are the only valid things separating
 			 * keywords from following line number constants, and whitespace
-			 * doesn't end up in this section.
+			 * doesn't end up in this section so we just have to worry
+			 * about commas.
 			 */
 
-			if (!(**read == ',')) {
+			if (**read != ',') {
 				constant_due = false;
 				statement_left = false;
 			}
 
 			/* Following DEF PROC/FN, we track the line status:
 			 * - '(' puts us into parameter mode, after which
-			 * - ')' will take us out of DEF mode altrogether, and
+			 * - ')' will take us out of DEF mode altogether, and
 			 * - anything outside of parameter mode will also exit.
 			 *
 			 * Whitespace is ignored, as the interpreter seems OK
