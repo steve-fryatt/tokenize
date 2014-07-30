@@ -1001,20 +1001,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				msg_report(MSG_VAR_LIB);
 
 			/* A variable is considered to be getting assigned to if:
-			 * - it's on statement left,
+			 * - it's on statement left and is either string or not followed by ! or ?,
 			 * - it falls within the parameters of an FN or PROC,
 			 * - it follows SYS ... TO, or
 			 * - it's at the start of an assembler statement and is preceeded by a .
 			 *
 			 * This is broken, as it does not take into account any of
 			 * FOR, DIM, INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
-			 * or the use of !, ?, $ and | indirection operators.
-			 *
-			 * In addition, many assembler nemonics are treated as variables.
+			 * or assembler nemonics being treated as variables.
 			 */
 
 			**write = '\0';
-			if (variable_process(variable_name, write, statement_left ||
+			if (variable_process(variable_name, write, (statement_left && ((*(*read - 1) == '$') || (**read != '!' && **read != '?')) ||
 					definition_state == DEF_PARAMS || sys_state == SYS_OUTPUT ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
