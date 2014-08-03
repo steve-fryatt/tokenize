@@ -65,6 +65,7 @@ int main(int argc, char *argv[])
 	bool			report_vars = false;
 	bool			report_procs = false;
 	bool			report_unused_procs = false;
+	bool			delete_failures = true;
 	struct args_option	*options;
 	struct args_data	*option_data;
 	char			*output_file = NULL;
@@ -94,7 +95,8 @@ int main(int argc, char *argv[])
 
 	/* Decode the command line options. */
 
-	options = args_process_line(argc, argv, "path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,swis/KM,tab/IK,crunch/K,warn/K,verbose/S,help/S");
+	options = args_process_line(argc, argv,
+			"path/KM,source/AM,out/AK,start/IK,increment/IK,define/KM,link/KS,swi/S,swis/KM,tab/IK,crunch/K,warn/K,verbose/S,leave/S,help/S");
 	if (options == NULL)
 		param_error = true;
 
@@ -264,6 +266,9 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
+		} else if (strcmp(options->name, "leave") == 0) {
+			if (options->data != NULL && options->data->value.boolean == true)
+				delete_failures = false;
 		}
 
 		options = options->next;
@@ -313,7 +318,8 @@ int main(int argc, char *argv[])
 	/* Run the tokenisation. */
 
 	if (!tokenize_run_job(output_file, &parse_options) || msg_errors()) {
-		remove(output_file);
+		if (delete_failures)
+			remove(output_file);
 		return EXIT_FAILURE;
 	}
 
