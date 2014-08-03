@@ -1012,7 +1012,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 */
 
 			**write = '\0';
-			if (variable_process(variable_name, write, (statement_left && ((*(*read - 1) == '$') || (**read != '!' && **read != '?')) ||
+			if (variable_process(variable_name, write, (statement_left && ((*(*read - 1) == '$') || (**read != '!' && **read != '?'))) ||
 					definition_state == DEF_PARAMS || sys_state == SYS_OUTPUT ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
