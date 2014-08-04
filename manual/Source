@@ -218,7 +218,7 @@ Files containing SWI names should be passed to <cite>Tokenize</cite> using the <
 </codeblock>
 
 
-<subhead title="Indentation and Crunching">
+<subhead title="Tabs, Indentation and Crunching">
 
 <cite>Tokenize</cite> can adjust the indentation and spacing of the BASIC source when generating tokenized output.
 
@@ -246,7 +246,9 @@ and
 
 would both result in the same indentation. If a space were left between the line number and the rest of the statement in the second example, then this would be copied to the resulting file.
 
-If tabs are used, then these will be expanded into spaces so as to align with the next tab stop if all the preceding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
+If tabs are used anywhere outside of string constants, then by default these will be expanded into spaces so as to align with the next tab stop if all the preceding keywords are fully expanded. By default tab stops are 8 columns apart, but this can be changed using the <param>-tab</param> parameter: for example <command>tokenize -tab 4</command> to use four column tabs. It is recommended to configure <cite>Tokenize</cite> to use the same tab width as set in the text editor used to edit the source code.
+
+If <param>-tab</param> is used with a value of zero, then tabs will not be expanded and will instead be passed intact to the output file. Due to the requirement to expand keywords, using tabs can have unexpected effects if abbreviated keywords are used in the source.
 
 The <param>-crunch</param> parameter can be used to make <cite>Tokenize</cite> reduce whitespace within the tokenized BASIC file. In use it operates very much like BASIC&rsquo;s <code>CRUNCH</code> command. It takes a series of letters after it, which indicate what crunching to apply &ndash; in some instances, these are case sensitive.
 
