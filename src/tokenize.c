@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 #ifdef LINUX
 		printf(" -swis <file>           Use SWI names from file <file>.\n");
 #endif
-		printf(" -tab <n>               Set the tab column with to <n> spaces.\n");
+		printf(" -tab <n>               Set the tab column width to <n> spaces.\n");
 		printf(" -verbose               Generate verbose process information.\n");
 		printf(" -warn [P]              Control generation of information warnings.\n");
 		printf("                    P|p - Warn of unused|missing, multiple FN/PROC.\n");
