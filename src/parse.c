@@ -941,7 +941,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				parse_process_fnproc(read, write);
 				**write = '\0';
 				proc_process(fnproc_name, token == KWD_FN, definition_state == DEF_SEEN);
-				definition_state = DEF_NAME;
+				if (definition_state == DEF_SEEN)
+					definition_state = DEF_NAME;
 				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
