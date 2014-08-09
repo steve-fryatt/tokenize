@@ -13,13 +13,19 @@ PRINT "Hello"; : LIBRARY "BASIC:WimpLib" : PRINT "World"
 :
 LIBRARY variable$
 
-PRINT int%, variable$, real
+uarray% = 1
+
+PRINT int%, variable$, real, uarray%(5)
 
 IF TRUE THEN PRINT ELSE LIBRARY "BASIC:WimpLib"
 :
 PROCinitialise    : REM This is a comment
 PROCinitialise    :
 PROCinitialise    : 
+
+FOR foo% = 1 TO 20
+  PRINT foo%
+NEXT foo%
 
 test$ = GET$
 test2$ = INKEY$10
@@ -31,6 +37,16 @@ TIMER = 1 : PRINT TIMER+2
 TIME = 1
 TIMER = TIME
 ABSOLUTE
+
+MOUSE TO mtx%, mty%
+MOUSE mx%, my%, mb%
+
+READ rfoo%, rfoo$, rfoo
+
+INPUT#ihandle%, iread$
+INPUT LINE ilread$
+LINE INPUT liread$
+INPUT iread%, iread$
 
 :
 ON ERROR IF FNerror(task_name$)=2 THEN quit%=TRUE
@@ -123,6 +139,7 @@ ENDPROC
 :
 DEF PROCinitialise
 DIM a% 256, b% 4095, q% 256
+DIM array%(a%), barray%(b%)
 :
 task_name$="GetFiler"
 :
@@ -251,7 +268,7 @@ ENDPROC
 :
 :
 :
-DEF PROCsave_file_from_drag
+DEF PROCsave_file_from_drag(!b%)
 PROCsave_obey_file(FNctrl_string(b%+44))
 :
 b%!12=b%!8
