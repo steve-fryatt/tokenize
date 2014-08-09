@@ -1042,6 +1042,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			/* Handle variable names */
 			char *variable_name = *write;
 			bool indirection = false;
+			bool array = false;
+			bool assignment = false;
+
 			parse_process_variable(read, write);
 
 			if (library_path_due && options->link_libraries)
@@ -1060,16 +1063,31 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * Non-string variables followed by ! or ? are taken to be part of an
 			 * indirection expression (and are therefore being read). 
 			 *
+			 * Arrays are only "assigned" if they're being DIMmed. All other
+			 * accesses are treated as a read. 
+			 *
 			 * This is broken, as it does not take into account assembler
 			 * nemonics being treated as variables.
 			 */
 
-			**write = '\0';
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
-			if (variable_process(variable_name, write, (**read == '('),
-					(!indirection && (statement_left || for_state == FOR_ASSIGN || list_state == LIST_ASSIGN ||
-					dim_state == DIM_ASSIGN || definition_state == DEF_ASSIGN || sys_state == SYS_OUTPUT)) ||
-					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
+			array = (**read == '(');
+
+			if (array) {
+				assignment = (!indirection && (dim_state == DIM_ASSIGN));
+			} else {
+				assignment = (!indirection && (statement_left ||
+					for_state == FOR_ASSIGN ||
+					list_state == LIST_ASSIGN ||
+					dim_state == DIM_ASSIGN ||
+					definition_state == DEF_ASSIGN ||
+					sys_state == SYS_OUTPUT ||
+					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.')));
+			}
+
+			**write = '\0';
+
+			if (variable_process(variable_name, write, array, assignment)) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
 				status = PARSE_DELETED;
 				no_clean_check = true;
