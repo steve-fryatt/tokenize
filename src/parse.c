@@ -458,7 +458,7 @@ static enum parse_keyword parse_keyword_index[] = {
 
 
 /**
- * States to allow tracking of DEF and SYS statements.
+ * States to allow tracking of DEF, DIM and SYS statements.
  */
 
 enum parse_def_state {
@@ -466,6 +466,12 @@ enum parse_def_state {
 	DEF_SEEN,		/**< We've seen a DEF and are processing the PROC/FN name.		*/
 	DEF_NAME,		/**< We've seen the PROC/FN name, and are waiting for parameters.	*/
 	DEF_PARAMS		/**< We've seen a DEF and an opening (, so are in the parameters.	*/
+};
+
+enum parse_dim_state {
+	DIM_NONE,		/**< We haven't seen a DIM yet.						*/
+	DIM_ASSIGN,		/**< We've seen a DIM, and are in the assignment side.			*/
+	DIM_READ		/**< We've seen a DIM, and are in the read side.			*/
 };
 
 enum parse_sys_state {
@@ -752,6 +758,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 	bool			assembler_comment = false;	/**< True if we're in an assembler comment.				*/
 
 	enum parse_def_state	definition_state = DEF_NONE;	/**< We're not in a DEF PROC/DEF FN.					*/
+	enum parse_dim_state	dim_state = DIM_NONE;		/**< We're not in a DIM statement.					*/
 	enum parse_sys_state	sys_state = SYS_NONE;		/**< We're not in a SYS statement.					*/
 
 	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
@@ -944,6 +951,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				if (definition_state == DEF_SEEN)
 					definition_state = DEF_NAME;
 				break;
+			case KWD_DIM:
+				/* If this isn't DIM() as a function, we're into defining variables. */
+				if (**read != '(')
+					dim_state = DIM_ASSIGN;
+				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
 					status = PARSE_DELETED;
@@ -969,6 +981,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_TO:
 				if (sys_state == SYS_INPUT)
 					sys_state = SYS_OUTPUT;
+				break;
 			default:
 				break;
 			}
@@ -993,6 +1006,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 		} else if ((**read >= 'a' && **read <= 'z') || (**read >= 'A' && **read <= 'Z') || (**read == '_') || (**read == '`')) {
 			/* Handle variable names */
 			char *variable_name = *write;
+			bool indirection = false;
 			parse_process_variable(read, write);
 
 			if (library_path_due && options->link_libraries)
@@ -1001,16 +1015,18 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			/* A variable is considered to be getting assigned to if:
 			 * - it's on statement left and is either string or not followed by ! or ?,
 			 * - it falls within the parameters of an FN or PROC,
-			 * - it follows SYS ... TO, or
+			 * - it follows SYS ... TO,
+			 * - it immediately follows a DIM or a subsequent comma, or
 			 * - it's at the start of an assembler statement and is preceeded by a .
 			 *
 			 * This is broken, as it does not take into account any of
-			 * FOR, DIM, INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
+			 * FOR, INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
 			 * or assembler nemonics being treated as variables.
 			 */
 
 			**write = '\0';
-			if (variable_process(variable_name, write, (statement_left && ((*(*read - 1) == '$') || (**read != '!' && **read != '?'))) ||
+			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
+			if (variable_process(variable_name, write, (statement_left && !indirection) || (dim_state == DIM_ASSIGN && !indirection) ||
 					definition_state == DEF_PARAMS || sys_state == SYS_OUTPUT ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
@@ -1023,6 +1039,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			statement_left = false;
 			line_start = false;
 			library_path_due = false;
+			if (dim_state == DIM_ASSIGN)
+				dim_state = DIM_READ;
 			if (sys_state == SYS_NAME)
 				sys_state = SYS_INPUT;
 			definition_state = DEF_NONE;
@@ -1062,11 +1080,19 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * keywords from following line number constants, and whitespace
 			 * doesn't end up in this section so we just have to worry
 			 * about commas.
+			 *
+			 * Commas in DIM statements return to assign mode for variables;
+			 * non-commas take us into read mode.
 			 */
 
 			if (**read != ',') {
 				constant_due = false;
 				statement_left = false;
+				
+				if (dim_state == DIM_ASSIGN)
+					dim_state = DIM_READ;
+			} else if (dim_state == DIM_READ) {
+				dim_state = DIM_ASSIGN;
 			}
 
 			/* Following DEF PROC/FN, we track the line status:
