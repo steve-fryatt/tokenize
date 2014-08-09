@@ -118,10 +118,11 @@ void variable_report(void)
 			if (list->name == NULL)
 				continue;
 
-			printf("%s%s assigned %d, read %d\n", list->name, (list->array) ? "()" : "", list->assignments, list->reads);
-
 			if (list->assignments == 0 && list->reads > 0)
-				msg_report(MSG_VAR_MISSING_DEF, list->name);
+				msg_report((list->array) ? MSG_VAR_MISSING_DIM : MSG_VAR_MISSING_DEF, list->name);
+
+			if (list->assignments > 0 && list->reads == 0)
+				msg_report((list->array) ? MSG_VAR_UNUSED_DIM : MSG_VAR_UNUSED_DEF, list->name);
 
 			list = list->next;
 		}
