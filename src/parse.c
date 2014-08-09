@@ -465,7 +465,8 @@ enum parse_def_state {
 	DEF_NONE,		/**< We haven't seen a DEF yet.						*/
 	DEF_SEEN,		/**< We've seen a DEF and are processing the PROC/FN name.		*/
 	DEF_NAME,		/**< We've seen the PROC/FN name, and are waiting for parameters.	*/
-	DEF_PARAMS		/**< We've seen a DEF and an opening (, so are in the parameters.	*/
+	DEF_ASSIGN,		/**< We've seen a DEF and an opening (, and are in assigning variables.	*/
+	DEF_READ		/**< We're in the parameters, but are in an indirection expression.	*/
 };
 
 enum parse_dim_state {
@@ -986,7 +987,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				break;
 			}
 
-			if (token != KWD_DEF && token != KWD_FN && token != KWD_PROC && (token != KWD_RETURN || definition_state != DEF_PARAMS))
+			if (token != KWD_DEF && token != KWD_FN && token != KWD_PROC &&
+					(token != KWD_RETURN || (definition_state != DEF_ASSIGN && definition_state != DEF_READ)))
 				definition_state = DEF_NONE;
 
 			statement_start = false;
@@ -1026,8 +1028,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			**write = '\0';
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
-			if (variable_process(variable_name, write, (statement_left && !indirection) || (dim_state == DIM_ASSIGN && !indirection) ||
-					definition_state == DEF_PARAMS || sys_state == SYS_OUTPUT ||
+			if (variable_process(variable_name, write, (!indirection && (statement_left ||
+					dim_state == DIM_ASSIGN || definition_state == DEF_ASSIGN || sys_state == SYS_OUTPUT)) ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
 				status = PARSE_DELETED;
@@ -1105,10 +1107,14 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 */
 
 			if (definition_state == DEF_NAME && **read == '(')
-				definition_state = DEF_PARAMS;
-			else if (definition_state == DEF_PARAMS && **read == ')')
+				definition_state = DEF_ASSIGN;
+			else if ((definition_state == DEF_ASSIGN || definition_state == DEF_READ) && **read == ')')
 				definition_state = DEF_NONE;
-			else if (definition_state != DEF_PARAMS)
+			else if (definition_state == DEF_ASSIGN && (**read == '!' || **read == '?' || **read == '$' || **read == '|'))
+				definition_state = DEF_READ;
+			else if (definition_state == DEF_READ && **read == ',')
+				definition_state = DEF_ASSIGN;
+			else if (definition_state != DEF_ASSIGN && definition_state != DEF_READ)
 				definition_state = DEF_NONE;
 
 			/* Copy the character to the output. */
