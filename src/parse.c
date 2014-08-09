@@ -461,6 +461,12 @@ static enum parse_keyword parse_keyword_index[] = {
  * States to allow tracking of DEF, DIM and SYS statements.
  */
 
+enum parse_list_state {
+	LIST_NONE,		/**< We haven't seen a list statement (INPUT, MOUSE, READ) yet.		*/
+	LIST_ASSIGN,		/**< We're in a list, and expecting a variable for assignment.		*/
+	LIST_READ		/**< We're in a list, but currently in an indirection expression.	*/
+};
+
 enum parse_def_state {
 	DEF_NONE,		/**< We haven't seen a DEF yet.						*/
 	DEF_SEEN,		/**< We've seen a DEF and are processing the PROC/FN name.		*/
@@ -766,6 +772,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	enum parse_def_state	definition_state = DEF_NONE;	/**< We're not in a DEF PROC/DEF FN.					*/
 	enum parse_dim_state	dim_state = DIM_NONE;		/**< We're not in a DIM statement.					*/
+	enum parse_list_state	list_state = LIST_NONE;		/**< We're not in an INPUT, MOUSE or READ statement.			*/
 	enum parse_for_state	for_state = FOR_NONE;		/**< We're not in a FOR statement.					*/
 	enum parse_sys_state	sys_state = SYS_NONE;		/**< We're not in a SYS statement.					*/
 
@@ -967,6 +974,29 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_FOR:
 				for_state = FOR_ASSIGN;
 				break;
+			case KWD_MOUSE:
+			case KWD_READ:
+				list_state = LIST_ASSIGN;
+				break;
+			case KWD_INPUT:
+				/* The first variable after INPUT# is the file handle. */
+				list_state = (**read == '#') ? LIST_READ : LIST_ASSIGN;
+				break;
+			case KWD_SYS:
+				sys_state = SYS_NAME;
+				break;
+			case KWD_TO:
+				/* TO moves SYS parameters from input to output. */
+				if (sys_state == SYS_INPUT)
+					sys_state = SYS_OUTPUT;
+			case KWD_COLOUR:
+			case KWD_OFF:
+			case KWD_ON:
+			case KWD_RECTANGLE:
+			case KWD_STEP:
+				/* MOUSE [COLOUR|OFF|ON|RECTANGLE|STEP|TO] are not list assignments. */
+				list_state = LIST_NONE;
+				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
 					status = PARSE_DELETED;
@@ -985,13 +1015,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 					library_path_due = true;
 				else if (options->link_libraries)
 					msg_report(MSG_SKIPPED_LIB);
-				break;
-			case KWD_SYS:
-				sys_state = SYS_NAME;
-				break;
-			case KWD_TO:
-				if (sys_state == SYS_INPUT)
-					sys_state = SYS_OUTPUT;
 				break;
 			default:
 				break;
@@ -1029,18 +1052,22 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * - it falls within the parameters of an FN or PROC,
 			 * - it follows SYS ... TO,
 			 * - it immediately follows a DIM or a subsequent comma,
+			 * - it follows MOUSE, READ, INPUT, INPUT LINE, LINE INPUT,
+			 * - it follows a comma after INPUT# (to allow for the file handle),
 			 * - it's the first variable following a FOR, and before the =, or
 			 * - it's at the start of an assembler statement and is preceeded by a .
 			 *
-			 * This is broken, as it does not take into account any of
-			 * INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
-			 * or assembler nemonics being treated as variables.
+			 * Non-string variables followed by ! or ? are taken to be part of an
+			 * indirection expression (and are therefore being read). 
+			 *
+			 * This is broken, as it does not take into account assembler
+			 * nemonics being treated as variables.
 			 */
 
 			**write = '\0';
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
 			if (variable_process(variable_name, write,
-					(!indirection && (statement_left || for_state == FOR_ASSIGN ||
+					(!indirection && (statement_left || for_state == FOR_ASSIGN || list_state == LIST_ASSIGN ||
 					dim_state == DIM_ASSIGN || definition_state == DEF_ASSIGN || sys_state == SYS_OUTPUT)) ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
@@ -1110,6 +1137,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			} else if (dim_state == DIM_READ) {
 				dim_state = DIM_ASSIGN;
 			}
+
+			if (list_state == LIST_ASSIGN && (**read == '=' || **read == '!' || **read == '?' || **read == '$' || **read == '|'))
+				list_state = LIST_READ;
+			else if (list_state == LIST_READ && **read == ',')
+				list_state = LIST_ASSIGN;
 
 			/* Following a FOR, we drop out of assigment if we see
 			 * an indirection operator or an = to end the loop
