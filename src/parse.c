@@ -475,6 +475,12 @@ enum parse_dim_state {
 	DIM_READ		/**< We've seen a DIM, and are in the read side.			*/
 };
 
+enum parse_for_state {
+	FOR_NONE,		/**< We haven't seen a FOR yet.						*/
+	FOR_ASSIGN,		/**< We've seen a FOR, and are waiting for the loop variable assignment.*/
+	FOR_COMPLETE		/**< We've processed the loop variable, or have now seen an = sign.	*/
+};
+
 enum parse_sys_state {
 	SYS_NONE,		/**< We haven't seen a SYS yet.						*/
 	SYS_NAME,		/**< We've seen a SYS, and are waiting for the name or number.		*/
@@ -760,6 +766,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	enum parse_def_state	definition_state = DEF_NONE;	/**< We're not in a DEF PROC/DEF FN.					*/
 	enum parse_dim_state	dim_state = DIM_NONE;		/**< We're not in a DIM statement.					*/
+	enum parse_for_state	for_state = FOR_NONE;		/**< We're not in a FOR statement.					*/
 	enum parse_sys_state	sys_state = SYS_NONE;		/**< We're not in a SYS statement.					*/
 
 	int			bracket_count = 0;		/**< The number of unclosed square brackets found in the statement.	*/
@@ -957,6 +964,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				if (**read != '(')
 					dim_state = DIM_ASSIGN;
 				break;
+			case KWD_FOR:
+				for_state = FOR_ASSIGN;
+				break;
 			case KWD_REM:
 				if (options->crunch_rems) {
 					status = PARSE_DELETED;
@@ -1018,17 +1028,19 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * - it's on statement left and is either string or not followed by ! or ?,
 			 * - it falls within the parameters of an FN or PROC,
 			 * - it follows SYS ... TO,
-			 * - it immediately follows a DIM or a subsequent comma, or
+			 * - it immediately follows a DIM or a subsequent comma,
+			 * - it's the first variable following a FOR, and before the =, or
 			 * - it's at the start of an assembler statement and is preceeded by a .
 			 *
 			 * This is broken, as it does not take into account any of
-			 * FOR, INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
+			 * INPUT, INPUT#, INPUT LINE, LINE INPUT, MOUSE, READ
 			 * or assembler nemonics being treated as variables.
 			 */
 
 			**write = '\0';
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
-			if (variable_process(variable_name, write, (!indirection && (statement_left ||
+			if (variable_process(variable_name, write,
+					(!indirection && (statement_left || for_state == FOR_ASSIGN ||
 					dim_state == DIM_ASSIGN || definition_state == DEF_ASSIGN || sys_state == SYS_OUTPUT)) ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
@@ -1043,6 +1055,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			library_path_due = false;
 			if (dim_state == DIM_ASSIGN)
 				dim_state = DIM_READ;
+			if (for_state == FOR_ASSIGN)
+				for_state = FOR_COMPLETE;
 			if (sys_state == SYS_NAME)
 				sys_state = SYS_INPUT;
 			definition_state = DEF_NONE;
@@ -1097,10 +1111,23 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				dim_state = DIM_ASSIGN;
 			}
 
+			/* Following a FOR, we drop out of assigment if we see
+			 * an indirection operator or an = to end the loop
+			 * variable assignment (we also exit after a variable,
+			 * because that will be the loop variable).
+			 */
+
+			if (for_state == FOR_ASSIGN && (**read == '=' || **read == '!' || **read == '?' || **read == '$' || **read == '|'))
+				for_state = FOR_COMPLETE;
+
 			/* Following DEF PROC/FN, we track the line status:
-			 * - '(' puts us into parameter mode, after which
+			 * - '(' puts us into parameter assign mode, after which
 			 * - ')' will take us out of DEF mode altogether, and
 			 * - anything outside of parameter mode will also exit.
+			 *
+			 * While in assign mode, indirection operators put us
+			 * into read mode, while a comma will return us to assign
+			 * mode again.
 			 *
 			 * Whitespace is ignored, as the interpreter seems OK
 			 * with something like "DEF PROCfoo (bar%)".
