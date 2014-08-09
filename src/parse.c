@@ -1066,7 +1066,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			**write = '\0';
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));
-			if (variable_process(variable_name, write,
+			if (variable_process(variable_name, write, (**read == '('),
 					(!indirection && (statement_left || for_state == FOR_ASSIGN || list_state == LIST_ASSIGN ||
 					dim_state == DIM_ASSIGN || definition_state == DEF_ASSIGN || sys_state == SYS_OUTPUT)) ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.'))) {

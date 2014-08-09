@@ -64,6 +64,7 @@ union variable_value {
 
 struct variable_entry {
 	char			*name;		/**< Pointer to the variable's name, in full.			*/
+	bool			array;		/**< True if the variable is an arry; false if not.		*/
 	enum variable_type	type;		/**< The variable's data type.					*/
 	union variable_value	value;		/**< The variable's value information.				*/
 
@@ -79,9 +80,9 @@ struct variable_entry {
 static struct variable_entry	*variable_list[VARIABLE_INDEXES];
 
 static void variable_substitute_constant(struct variable_entry *variable, char *name, char **write);
-static struct variable_entry *variable_create(char *name);
+static struct variable_entry *variable_create(char *name, bool array);
 static enum variable_type variable_find_type(char *name);
-static struct variable_entry *variable_find(char *name);
+static struct variable_entry *variable_find(char *name, bool array);
 static int variable_find_index(char *name);
 
 
@@ -116,6 +117,8 @@ void variable_report(void)
 		while (list != NULL) {
 			if (list->name == NULL)
 				continue;
+
+			printf("%s%s assigned %d, read %d\n", list->name, (list->array) ? "()" : "", list->assignments, list->reads);
 
 			if (list->assignments == 0 && list->reads > 0)
 				msg_report(MSG_VAR_MISSING_DEF, list->name);
@@ -178,7 +181,7 @@ bool variable_add_constant(char *name, char *value)
 	 * definition -- be redefined a second time.
 	 */
 
-	variable = variable_find(name);
+	variable = variable_find(name, false);
 	if (variable != NULL) {
 		msg_report(MSG_CONST_REDEF, name);
 		return false;
@@ -186,7 +189,7 @@ bool variable_add_constant(char *name, char *value)
 
 	/* If the variable doesn't exist, create a new record for it. */
 
-	variable = variable_create(name);
+	variable = variable_create(name, false);
 	if (variable == NULL)
 		return false;
 
@@ -224,19 +227,20 @@ bool variable_add_constant(char *name, char *value)
  *				buffer.
  * \param **write		Pointer to the output buffer write pointer, which will
  *				be updated on exit.
+ * \param is_array		True if the variable is an array; else False.
  * \param statement_left	True if this is an assignment; False for a read.
  * \return			True if the variable is being assigned to, else false.
  */
 
-bool variable_process(char *name, char **write, bool statement_left)
+bool variable_process(char *name, char **write, bool is_array, bool statement_left)
 {
 	struct variable_entry	*variable;
 
 	/* Look the variable name up in the index. */
 
-	variable = variable_find(name);
+	variable = variable_find(name, is_array);
 	if (variable == NULL)
-		variable = variable_create(name);
+		variable = variable_create(name, is_array);
 
 	if (variable == NULL)
 		return false;
@@ -318,10 +322,11 @@ static void variable_substitute_constant(struct variable_entry *variable, char *
  * Create a new variable, returning a pointer to its data block.
  *
  * \param *name			Pointer to the name to use for the new variable.
+ * \param array			True if the variable is an array; false if not.
  * \return			Pointer to the newly created block, or NULL on failure.
  */
 
-static struct variable_entry *variable_create(char *name)
+static struct variable_entry *variable_create(char *name, bool array)
 {
 	struct variable_entry	*variable;
 	int			index;
@@ -336,6 +341,7 @@ static struct variable_entry *variable_create(char *name)
 	}
 
 	variable->name = strdup(name);
+	variable->array = array;
 	variable->type = variable_find_type(variable->name);
 	switch (variable->type) {
 	case VARIABLE_INTEGER:
@@ -402,10 +408,11 @@ static enum variable_type variable_find_type(char *name)
  * Given a variable name, find its record if one exists.
  *
  * \param *name			Pointer to the variable's name.
+ * \param array			True if the variable is an array; False if not.
  * \return			Pointer to the variable's record, or NULL if not found.
  */
 
-static struct variable_entry *variable_find(char *name)
+static struct variable_entry *variable_find(char *name, bool array)
 {
 	struct variable_entry	*list;
 	int			index;
@@ -416,7 +423,7 @@ static struct variable_entry *variable_find(char *name)
 	index = variable_find_index(name);
 	list = variable_list[index];
 
-	while (list != NULL && list->name != NULL && strcmp(list->name, name) != 0)
+	while (list != NULL && list->name != NULL && (list->array != array || strcmp(list->name, name) != 0))
 		list = list->next;
 
 	if (list == NULL || list->name == NULL)

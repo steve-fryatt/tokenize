@@ -83,11 +83,12 @@ bool variable_add_constant(char *name, char *value);
  *				buffer.
  * \param **write		Pointer to the output buffer write pointer, which will
  *				be updated on exit.
+ * \param is_array		True if the variable is an array; else False.
  * \param statement_left	True if this is an assignment; False for a read.
  * \return			True if the variable is being assigned to, else false.
  */
 
-bool variable_process(char *name, char **write, bool statement_left);
+bool variable_process(char *name, char **write, bool is_array, bool statement_left);
 
 #endif
 
