@@ -137,7 +137,7 @@ endif
 MANSRC := Source
 MANSPR := ManSprite
 
-OBJS := args.o library.o msg.o parse.o proc.o string.o swi.o tokenize.o variable.o
+OBJS := args.o asm.o library.o msg.o parse.o proc.o string.o swi.o tokenize.o variable.o
 
 
 # Build everything, but don't package it for release.

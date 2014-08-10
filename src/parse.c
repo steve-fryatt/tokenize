@@ -42,6 +42,7 @@
 
 #include "parse.h"
 
+#include "asm.h"
 #include "library.h"
 #include "msg.h"
 #include "proc.h"
@@ -62,177 +63,6 @@
 
 #define left_token(k) ((char) parse_keywords[(k)].start)
 #define right_token(k) ((char) parse_keywords[(k)].elsewhere)
-
-/**
- * List of keyword array indexes. This must match the entries in the
- * parse_keywords[] array defined further down the file.
- */
-
-enum parse_keyword {
-	KWD_NO_MATCH = -1,	/**< Indicates that no keyword match is available.		*/
-	KWD_ABS = 0,		/**< Keywords start at array index 0 and go alphabetically.	*/
-	KWD_ACS,
-	KWD_ADVAL,
-	KWD_AND,
-	KWD_APPEND,
-	KWD_ASC,
-	KWD_ASN,
-	KWD_ATN,
-	KWD_AUTO,
-	KWD_BEAT,
-	KWD_BEATS,
-	KWD_BGET,
-	KWD_BPUT,
-	KWD_CALL,
-	KWD_CASE,
-	KWD_CHAIN,
-	KWD_CHR_D,
-	KWD_CIRCLE,
-	KWD_CLEAR,
-	KWD_CLG,
-	KWD_CLOSE,
-	KWD_CLS,
-	KWD_COLOR,
-	KWD_COLOUR,
-	KWD_COS,
-	KWD_COUNT,
-	KWD_CRUNCH,
-	KWD_DATA,
-	KWD_DEF,
-	KWD_DEG,
-	KWD_DELETE,
-	KWD_DIM,
-	KWD_DIV,
-	KWD_DRAW,
-	KWD_EDIT,
-	KWD_ELLIPSE,
-	KWD_ELSE,
-	KWD_END,
-	KWD_ENDCASE,
-	KWD_ENDIF,
-	KWD_ENDPROC,
-	KWD_ENDWHILE,
-	KWD_ENVELOPE,
-	KWD_EOF,
-	KWD_EOR,
-	KWD_ERL,
-	KWD_ERR,
-	KWD_ERROR,
-	KWD_EVAL,
-	KWD_EXP,
-	KWD_EXT,
-	KWD_FALSE,
-	KWD_FILL,
-	KWD_FN,
-	KWD_FOR,
-	KWD_GCOL,
-	KWD_GET,
-	KWD_GET_D,
-	KWD_GOSUB,
-	KWD_GOTO,
-	KWD_HELP,
-	KWD_HIMEM,
-	KWD_IF,
-	KWD_INKEY,
-	KWD_INKEY_D,
-	KWD_INPUT,
-	KWD_INSTALL,
-	KWD_INSTR,
-	KWD_INT,
-	KWD_LEFT_D,
-	KWD_LEN,
-	KWD_LET,
-	KWD_LIBRARY,
-	KWD_LINE,
-	KWD_LIST,
-	KWD_LN,
-	KWD_LOAD,
-	KWD_LOCAL,
-	KWD_LOG,
-	KWD_LOMEM,
-	KWD_LVAR,
-	KWD_MID_D,
-	KWD_MOD,
-	KWD_MODE,
-	KWD_MOUSE,
-	KWD_MOVE,
-	KWD_NEW,
-	KWD_NEXT,
-	KWD_NOT,
-	KWD_OF,
-	KWD_OFF,
-	KWD_OLD,
-	KWD_ON,
-	KWD_OPENIN,
-	KWD_OPENOUT,
-	KWD_OPENUP,
-	KWD_OR,
-	KWD_ORIGIN,
-	KWD_OSCLI,
-	KWD_OTHERWISE,
-	KWD_OVERLAY,
-	KWD_PAGE,
-	KWD_PI,
-	KWD_PLOT,
-	KWD_POINT,
-	KWD_POINT2,
-	KWD_POS,
-	KWD_PRINT,
-	KWD_PROC,
-	KWD_PTR,
-	KWD_QUIT,
-	KWD_RAD,
-	KWD_READ,
-	KWD_RECTANGLE,
-	KWD_REM,
-	KWD_RENUMBER,
-	KWD_REPEAT,
-	KWD_REPORT,
-	KWD_RESTORE,
-	KWD_RETURN,
-	KWD_RIGHT_D,
-	KWD_RND,
-	KWD_RUN,
-	KWD_SAVE,
-	KWD_SGN,
-	KWD_SIN,
-	KWD_SOUND,
-	KWD_SPC,
-	KWD_SQR,
-	KWD_STEP,
-	KWD_STEREO,
-	KWD_STOP,
-	KWD_STR_D,
-	KWD_STRING_D,
-	KWD_SUM,
-	KWD_SWAP,
-	KWD_SYS,
-	KWD_TAB,
-	KWD_TAN,
-	KWD_TEMPO,
-	KWD_TEXTLOAD,
-	KWD_TEXTSAVE,
-	KWD_THEN,
-	KWD_TIME,
-	KWD_TINT,
-	KWD_TO,
-	KWD_TRACE,
-	KWD_TRUE,
-	KWD_TWIN,
-	KWD_TWINO,
-	KWD_UNTIL,
-	KWD_USR,
-	KWD_VAL,
-	KWD_VDU,
-	KWD_VOICE,
-	KWD_VOICES,
-	KWD_VPOS,
-	KWD_WAIT,
-	KWD_WHEN,
-	KWD_WHILE,
-	KWD_WIDTH,
-	MAX_KEYWORDS		/**< The maximum number of keywords available.			*/
-};
 
 
 /**
@@ -782,6 +612,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 	char			*start_pos = *write;		/**< A pointer to the start of the statement.				*/
 
+	if (*assembler == true)
+		asm_new_statement();
+
 	while (**read != '\n' && **read != ':' && parse_output_length(*write) < MAX_LINE_LENGTH) {
 		/* If the character isn't whitespace, then the line can't be
 		 * entirely whitespace.
@@ -849,6 +682,8 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			*assembler = true;
 			*(*write)++ = *(*read)++;
+
+			asm_new_statement();
 
 			statement_start = false;
 			statement_left = false;
@@ -1020,6 +855,9 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				break;
 			}
 
+			if (*assembler == true)
+				asm_process_keyword(token);
+
 			if (token != KWD_DEF && token != KWD_FN && token != KWD_PROC &&
 					(token != KWD_RETURN || (definition_state != DEF_ASSIGN && definition_state != DEF_READ)))
 				definition_state = DEF_NONE;
@@ -1049,6 +887,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			if (library_path_due && options->link_libraries)
 				msg_report(MSG_VAR_LIB);
+
+			**write = '\0';
+
+			if (*assembler == true)
+				asm_process_variable(&variable_name);
 
 			/* A variable is considered to be getting assigned to if:
 			 * - it's on statement left and is either string or not followed by ! or ?,
@@ -1084,8 +927,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 					sys_state == SYS_OUTPUT ||
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.')));
 			}
-
-			**write = '\0';
 
 			if (variable_process(variable_name, write, array, assignment)) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
@@ -1141,9 +982,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * keywords from following line number constants, and whitespace
 			 * doesn't end up in this section so we just have to worry
 			 * about commas.
-			 *
-			 * Commas in DIM statements return to assign mode for variables;
-			 * non-commas take us into read mode.
 			 */
 
 			if (**read != ',') {
@@ -1152,14 +990,36 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				
 				if (dim_state == DIM_ASSIGN)
 					dim_state = DIM_READ;
-			} else if (dim_state == DIM_READ) {
-				dim_state = DIM_ASSIGN;
 			}
 
-			if (list_state == LIST_ASSIGN && (**read == '=' || **read == '!' || **read == '?' || **read == '$' || **read == '|'))
+			/* The assembler code needs to know about commas which aren't
+			 * part of FN or PROC parameters.
+			 */
+
+			if (*assembler == true && (definition_state == DEF_ASSIGN || definition_state == DEF_READ) && **read == ',')
+				asm_process_comma();
+
+			/* "Assignment Lists" follow INPUT, INPUT#, INPUT LINE, LINE INPUT,
+			 * MOUSE and READ. The variables that they contain are considered
+			 * to be getting assigned, unless they're in an indirection expression
+			 * or following the initial # of INPUT#.
+			 *
+			 * A comma starts a new assignment.
+			 */
+
+			if (list_state == LIST_ASSIGN && (**read == '!' || **read == '?' || **read == '$' || **read == '|'))
 				list_state = LIST_READ;
 			else if (list_state == LIST_READ && **read == ',')
 				list_state = LIST_ASSIGN;
+
+			/* Commas in DIM statements return to assign mode for variables;
+			 * non-commas take us into read mode.
+			 */
+
+			if (dim_state == DIM_READ && **read == ',')
+				dim_state = DIM_ASSIGN;
+			else if (dim_state == DIM_ASSIGN)
+				dim_state = DIM_READ;
 
 			/* Following a FOR, we drop out of assigment if we see
 			 * an indirection operator or an = to end the loop
@@ -1659,5 +1519,21 @@ static void parse_expand_tab(char **read, char **write, int extra_spaces, struct
 static bool parse_is_name_body(char c)
 {
 	return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '`') ? true : false;
+}
+
+
+/**
+ * Return the "right" token for a keyword.
+ *
+ * \param keyword	The keyword to return a token for.
+ * \return		The "right" token for the keyword.
+ */
+
+unsigned parse_get_token(enum parse_keyword keyword)
+{
+	if (keyword == KWD_NO_MATCH)
+		return 0;
+
+	return parse_keywords[(keyword)].elsewhere;
 }
 
