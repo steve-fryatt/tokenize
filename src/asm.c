@@ -67,51 +67,64 @@ struct asm_mnemonic_definition {
 };
 
 static char *asm_conditionals[] = {"AL", "CC", "CS", "EQ", "GE", "GT", "HI", "HS", "LE", "LO", "LS", "LT", "MI", "NE", "NV", "PL", "VC", "VS", NULL};
+static char *asm_shifts[] = {"ASL", "ASR", "LSL", "LSR", "ROR", "RRX", NULL};
+static char *asm_movsuffix[] = {"S", NULL};
+static char *asm_cmpsuffix[] = {"SP", "S", "P", NULL};
 static char *asm_loadmsuffix[] = {"DA", "DB", "EA", "ED", "FA", "FD", "IA", "IB", NULL};
-static char *asm_loadsuffix[] = {"B", NULL};
+static char *asm_loadsuffix[] = {"BT", "SB", "SH", "B", "H", "T", NULL};
 
 static struct asm_mnemonic_definition asm_mnemonics[] = {
 	/* &0 */
 
-	{"ADC",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"ADD",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"AND",		KWD_AND,	asm_conditionals,	NULL},
-	{"BIC",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"EOR",		KWD_EOR,	asm_conditionals,	NULL},
-	{"ORR",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"RSB",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"RSC",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"SBC",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"SUB",		KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"ADC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"ADD",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"AND",		KWD_AND,	asm_conditionals,	asm_movsuffix},
+	{"BIC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"EOR",		KWD_EOR,	asm_conditionals,	asm_movsuffix},
+	{"ORR",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"RSB",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"RSC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"SBC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"SUB",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
 
 	/* &1 */
 
-	{"CMN",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"CMP",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"TEQ",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"TST",		KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"CMN",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix},
+	{"CMP",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix},
+	{"TEQ",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix},
+	{"TST",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix},
 
 	/* &2 */
 
-	{"MOV",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"MVN",		KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"MOV",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"MVN",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
 
 	/* &3 */
 
-	{"MUL",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"MLA",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"SML",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"SMU",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"UML",		KWD_NO_MATCH,	asm_conditionals,	NULL},
-	{"UMU",		KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"MUL",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"MLA",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"SMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"SMUAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"UMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"UMULL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix},
+	{"SMULB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMULTB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMULWB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMULWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMLAB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMLATB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMLAWB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
+	{"SMLAWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL},
 
 	/* &4 */
 
 	{"LDR",		KWD_NO_MATCH,	asm_conditionals,	asm_loadsuffix},
+	{"LDRD",	KWD_NO_MATCH,	asm_conditionals,	NULL},
 
 	/* &5 */
 
 	{"STR",		KWD_NO_MATCH,	asm_conditionals,	asm_loadsuffix},
+	{"STRD",	KWD_NO_MATCH,	asm_conditionals,	NULL},
 
 	/* &6 */
 
@@ -310,25 +323,35 @@ void asm_process_variable(char **text)
 			asm_current_state = ASM_FOUND_MNEMONIC;
 			asm_current_mnemonic = MNM_ORR;
 		}
+	} else if ((asm_current_state == ASM_FOUND_MOVE) && (*(*text - 1) == ((char) parse_get_token(KWD_OR)))) {
+		printf("Special case for MOVE\n");
+	
+		if (toupper(**text) == 'Q') {
+			printf("Found keyword as MOVE + Q: %s in %s\n", asm_mnemonics[MNM_ORR].name, *text);
+			*text += 1;
+			asm_current_state = ASM_FOUND_MNEMONIC; /* \TODO -- Move past conditionals. */
+			asm_current_mnemonic = MNM_MOV;
+		}
 	} else if (asm_current_state == ASM_AT_START || asm_current_state == ASM_FOUND_LABEL) {
-		int			i;
-		enum asm_mnemonic	entry = 0;
-		bool			found = false;
+		int			i, longest = 0;
+		enum asm_mnemonic	entry = 0, found = MNM_NO_MATCH;
 
-		while (asm_mnemonics[entry].name != NULL && !found) {
+		while (asm_mnemonics[entry].name != NULL) {
 			for (i = 0; asm_mnemonics[entry].name[i] != '\0' && (*text)[i] != '\0' && asm_mnemonics[entry].name[i] == toupper((*text)[i]); i++);
 
-			if (asm_mnemonics[entry].name[i] == '\0')
-				found = true;
-			else
+			if (asm_mnemonics[entry].name[i] == '\0' && i > longest) {
+				found = entry;
+				longest = i;
+			} else {
 				entry++;
+			}
 		}
 
-		if (found == true) {
-			printf("Found keyword as text: %s in %s\n", asm_mnemonics[entry].name, *text);
-			*text += strlen(asm_mnemonics[entry].name);
+		if (found != MNM_NO_MATCH) {
+			printf("Found keyword as text: %s in %s\n", asm_mnemonics[found].name, *text);
+			*text += strlen(asm_mnemonics[found].name);
 			asm_current_state = ASM_FOUND_MNEMONIC;
-			asm_current_mnemonic = entry;
+			asm_current_mnemonic = found;
 		}
 	}
 	
