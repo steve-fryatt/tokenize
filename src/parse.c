@@ -996,7 +996,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 * part of FN or PROC parameters.
 			 */
 
-			if (*assembler == true && (definition_state == DEF_ASSIGN || definition_state == DEF_READ) && **read == ',')
+			if (*assembler == true && definition_state != DEF_ASSIGN && definition_state != DEF_READ && **read == ',')
 				asm_process_comma();
 
 			/* "Assignment Lists" follow INPUT, INPUT#, INPUT LINE, LINE INPUT,
