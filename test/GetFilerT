@@ -15,6 +15,8 @@ LIBRARY variable$
 
 uarray% = 1
 
+REMDIM uarray%(10)
+
 PRINT int%, variable$, real, uarray%(5)
 
 IF TRUE THEN PRINT ELSE LIBRARY "BASIC:WimpLib"
@@ -30,8 +32,6 @@ NEXT foo%
 test$ = GET$
 test2$ = INKEY$10
 
-A.B.C.D.
-E.F.G.H.I.L.M.N.O.P.Q.R.S.T.U.V.W.FOR
 
 TIMER = 1 : PRINT TIMER+2
 TIME = 1
@@ -347,12 +347,22 @@ L%=code_block%+code_size%
   STMFD   R13!,{R0,R14}
   CMP     R0,#11
   LDMNEFD R13!,{R0,PC}
+  
+  ORR     R1,R1,R1
+  MOVEQ   R2,R2
+  AND     R3,R2,R2
+  ANDEQ   R4,R5,R6
+  BEQ     code
+
+  BIC  R0, R0, R0
 
   MVN     R0,#NOT-1
   CMP     R1,#1
   STREQ   R0,down_flag
   CMP     R2,#&70
   STRGE   R0,mouse_flag
+
+  B       exit
 
   CMP     R1,#1
   LDMEQFD R13!,{R0,PC}
