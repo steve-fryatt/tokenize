@@ -97,14 +97,19 @@ static char *asm_fpreg[] = {"F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", NULL
 static char *asm_copros[] = {"CP0", "CP1", "CP2", "CP3", "CP4", "CP5", "CP6", "CP7",
 		"CP8", "CP9", "CP10", "CP11", "CP12", "CP13", "CP14", "CP15", NULL};
 
+static char *asm_statusmrs[] = {"CPSR", "SPSR", NULL};
+static char *asm_statusmsr[] = {"CPSR_C", "CPSR_F", "CPSR_S", "CPSR_X", "SPSR_C", "SPSR_F", "SPSR_S", "SPSR_X", NULL};
 
 static char *asm_movsuffix[] = {"S", NULL};
 static char *asm_cmpsuffix[] = {"SP", "S", "P", NULL};
 static char *asm_loadmsuffix[] = {"DA", "DB", "EA", "ED", "FA", "FD", "IA", "IB", NULL};
+static char *asm_fploadmsuffix[] = {"EA", "FD", NULL};
 static char *asm_loadsuffix[] = {"BT", "SB", "SH", "B", "H", "T", NULL};
 static char *asm_fpsuffix[] = {"DM", "DP", "DZ", "EM", "EP", "EZ", "SM", "SP", "SZ", "D", "E", "S", NULL};
 static char *asm_fpsuffix_single[] = {"SM", "SP", "SZ", "S", NULL};
 static char *asm_fpcmpsuffix[] = {"E", NULL};
+static char *asm_swpsuffix[] = {"B", NULL};
+static char *asm_ldcstcsuffix[] = {"L", NULL};
 
 static char *asm_no_params[] = {NULL};
 
@@ -121,11 +126,18 @@ static char **asm_loadm[] = {asm_registers, asm_registers, asm_registers, asm_re
 static char **asm_multhree[] = {asm_registers, asm_registers, asm_registers, NULL};
 static char **asm_mulfour[] = {asm_registers, asm_registers, asm_registers, asm_registers, NULL};
 static char **asm_param_copro[] = {asm_copros, asm_no_params, asm_coproreg, asm_coproreg, asm_coproreg, asm_no_params, NULL};
+static char **asm_param_copro1[] = {asm_copros, asm_no_params, asm_registers, asm_coproreg, asm_coproreg, NULL};
+static char **asm_param_copro2[] = {asm_copros, asm_no_params, asm_registers, asm_registers, asm_coproreg, NULL};
+static char **asm_param_mrs[] = {asm_registers, asm_statusmrs, NULL};
+static char **asm_param_msr[] = {asm_statusmsr, asm_registers, NULL};
+static char **asm_param_ldcstc[] = {asm_copros, asm_registers, NULL};
 
 static char **asm_fp_two[] = {asm_fpreg, asm_fpreg, NULL};
 static char **asm_fp_three[] = {asm_fpreg, asm_fpreg, asm_fpreg, NULL};
 static char **asm_fp_fix[] = {asm_registers, asm_fpreg, NULL};
 static char **asm_fp_flt[] = {asm_fpreg, asm_registers, NULL};
+static char **asm_fp_load[] = {asm_fpreg, asm_registers, NULL};
+static char **asm_fp_loadm[] = {asm_fpreg, asm_no_params, asm_registers, NULL};
 
 static struct asm_mnemonic_definition asm_mnemonics[] = {
 	/* &0 */
@@ -195,29 +207,34 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 	/* &9 */
 
 	{"CDP",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro},
-	{"CDP2",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro}, /* Done this far! */
-	{"LDC",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"MCR",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"MRC",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"MRR",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"STC",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"CDP2",	KWD_NO_MATCH,	NULL		,	NULL,			asm_param_copro},
+	{"LDC",		KWD_NO_MATCH,	asm_conditionals,	asm_ldcstcsuffix,	asm_param_ldcstc},
+	{"LDC2",	KWD_NO_MATCH,	NULL,			asm_ldcstcsuffix,	asm_param_ldcstc},
+	{"MCR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
+	{"MCR2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_copro2},
+	{"MRC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
+	{"MRC2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_copro1},
+	{"MCRR",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
+	{"MRRC",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
+	{"STC",		KWD_NO_MATCH,	asm_conditionals,	asm_ldcstcsuffix,	asm_param_ldcstc},
+	{"STC2",	KWD_NO_MATCH,	NULL,			asm_ldcstcsuffix,	asm_param_ldcstc},
 
 	/* &A */
 
-	{"MRS",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"MSR",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"SWP",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"MRS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_mrs},
+	{"MSR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_msr},
+	{"SWP",		KWD_NO_MATCH,	asm_conditionals,	asm_swpsuffix,		asm_multhree},
 
 	/* &B */
 
-	{"LDF",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"LFM",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"STF",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"SFM",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"LDF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_load},
+	{"LFM",		KWD_NO_MATCH,	asm_conditionals,	asm_fploadmsuffix,	asm_fp_loadm},
+	{"STF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_load},
+	{"SFM",		KWD_NO_MATCH,	asm_conditionals,	asm_fploadmsuffix,	asm_fp_loadm},
 
 	/* &C */
 
-	{"CMF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpcmpsuffix,	asm_fp_two}, /* Done from here! */
+	{"CMF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpcmpsuffix,	asm_fp_two},
 	{"CNF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpcmpsuffix,	asm_fp_two},
 	{"FIX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_fp_fix},
 	{"FLT",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_fp_flt},
@@ -261,7 +278,25 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 	{"TAN",		KWD_TAN,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
 	{"URD",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two}, /* Done this far! */
 
-	/* &F */
+	/* Other Stuff */
+
+	{"QADD",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"QSUB",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"QDADD",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"QDSUB",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"CLZ",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"BKPT",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"PLD",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+
+
+	/* Branches */
+
+	{"BLX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+	{"BL",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+	{"BX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+	{"B",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+
+	/* &F (Directives) */
 
 	{"ADR",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
 	{"ALIGN",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
@@ -276,24 +311,6 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 	{"EQUW",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
 	{"NOP",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
 	{"OPT",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-
-	/* Other Stuff. */
-
-	{"QAD",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"QSU",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"QDA",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"QDS",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"CLZ",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"BKPT",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"PLD",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-
-
-	/* Branches (must come at end due to ambiguity. */
-
-	{"BLX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"BL",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"BX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"B",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
 
 	/* End */
 
