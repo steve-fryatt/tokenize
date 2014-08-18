@@ -158,14 +158,14 @@ static char **asm_param_3_shift[] = {asm_registers, asm_registers, asm_registers
 static char **asm_param_4[] = {asm_registers, asm_registers, asm_registers, asm_registers, NULL};
 
 /* LDR and STR, where there can be different combinations of shifts.
- *
- * \TODO -- Not sure how this copes if the middle asm_shifts isn't a shift?
+ * These combinations will allow shifts through for the latter final
+ * register location, as the first shift might not be present.
  */
 
 static char **asm_param_ldr_3[] = {asm_registers, asm_registers, asm_registers, asm_shifts,
-		asm_registers, asm_shifts, NULL};
+		asm_shifts, asm_shifts, NULL};
 static char **asm_param_ldr_4[] = {asm_registers, asm_registers, asm_registers, asm_registers,
-		asm_shifts, asm_registers, asm_shifts, NULL};
+		asm_shifts, asm_shifts, asm_shifts, NULL};
 
 /* 16 ARM register parameters (worst-case LDM and STM). */
 
