@@ -146,17 +146,26 @@ static char **asm_param_1[] = {asm_registers, NULL};
 
 /* Two ARM register parameters. */
 
-static char **asm_param_2_shift[] = {asm_registers, asm_shifts, NULL};
+static char **asm_param_2_shift[] = {asm_registers, asm_registers, asm_shifts, NULL};
 
 /* Three ARM register parameters. */
 
 static char **asm_param_3[] = {asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_param_3_shift[] = {asm_registers, asm_registers, asm_shifts, NULL};
+static char **asm_param_3_shift[] = {asm_registers, asm_registers, asm_registers, asm_shifts, NULL};
 
 /* Four ARM register parameters. */
 
 static char **asm_param_4[] = {asm_registers, asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_param_4_shift[] = {asm_registers, asm_registers, asm_registers, asm_shifts, NULL};
+
+/* LDR and STR, where there can be different combinations of shifts.
+ *
+ * \TODO -- Not sure how this copes if the middle asm_shifts isn't a shift?
+ */
+
+static char **asm_param_ldr_3[] = {asm_registers, asm_registers, asm_registers, asm_shifts,
+		asm_registers, asm_shifts, NULL};
+static char **asm_param_ldr_4[] = {asm_registers, asm_registers, asm_registers, asm_registers,
+		asm_shifts, asm_registers, asm_shifts, NULL};
 
 /* 16 ARM register parameters (worst-case LDM and STM). */
 
@@ -238,13 +247,13 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 
 	/* &4 */
 
-	{"LDR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_3_shift},
-	{"LDRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4_shift},
+	{"LDR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_ldr_3},
+	{"LDRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_ldr_4},
 
 	/* &5 */
 
-	{"STR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_3_shift},
-	{"STRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4_shift},
+	{"STR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_ldr_3},
+	{"STRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_ldr_4},
 
 	/* &6 */
 
