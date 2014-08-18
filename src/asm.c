@@ -39,8 +39,17 @@
 
 #include "parse.h"
 
+/**
+ * A list of indexes for the known assembler mnemonics in the definition
+ * list. The order of this list *MUST* match the order of the definitions
+ * below.
+ */
+
 enum asm_mnemonic {
 	MNM_NO_MATCH = -1,
+
+/* &0 */
+
 	MNM_ADC,
 	MNM_ADD,
 	MNM_AND,
@@ -51,13 +60,174 @@ enum asm_mnemonic {
 	MNM_RSC,
 	MNM_SBC,
 	MNM_SUB,
+
+/* &1 */
+
 	MNM_CMN,
 	MNM_CMP,
 	MNM_TEQ,
 	MNM_TST,
+
+/* &2 */
+
 	MNM_MOV,
-	MNM_MVN
+	MNM_MVN,
+
+/* &3 */
+
+	MNM_MUL,
+	MNM_MLA,
+	MNM_SMLAL,
+	MNM_SMUAL,
+	MNM_UMLAL,
+	MNM_UMULL,
+	MNM_SMULB,
+	MNM_SMULTB,
+	MNM_SMULWB,
+	MNM_SMULWTB,
+	MNM_SMLAB,
+	MNM_SMLATB,
+	MNM_SMLAWB,
+	MNM_SMLAWTB,
+
+/* &4 */
+
+	MNM_LDR,
+	MNM_LDRD,
+
+/* &5 */
+
+	MNM_STR,
+	MNM_STRD,
+
+/* &6 */
+
+	MNM_LDM,
+
+/* &7 */
+
+	MNM_STM,
+
+/* &8 */
+
+	MNM_SWI,
+
+/* &9 */
+
+	MNM_CDP,
+	MNM_CDP2,
+	MNM_LDC,
+	MNM_LDC2,
+	MNM_MCR,
+	MNM_MCR2,
+	MNM_MRC,
+	MNM_MRC2,
+	MNM_MCRR,
+	MNM_MRRC,
+	MNM_STC,
+	MNM_STC2,
+
+/* &A */
+
+	MNM_MRS,
+	MNM_MSR,
+	MNM_SWP,
+
+/* &B */
+
+	MNM_LDF,
+	MNM_LFM,
+	MNM_STF,
+	MNM_SFM,
+
+/* &C */
+
+	MNM_CMF,
+	MNM_CNF,
+	MNM_FIX,
+	MNM_FLT,
+	MNM_RFC,
+	MNM_RFS,
+	MNM_WFC,
+	MNM_WFS,
+
+/* &D */
+
+	MNM_ADF,
+	MNM_DVF,
+	MNM_FDV,
+	MNM_FML,
+	MNM_FRD,
+	MNM_MUF,
+	MNM_POL,
+	MNM_POW,
+	MNM_RDF,
+	MNM_RMF,
+	MNM_RPW,
+	MNM_RSF,
+	MNM_SUF,
+
+/* &E */
+
+	MNM_ABS,
+	MNM_ACS,
+	MNM_ASN,
+	MNM_ATN,
+	MNM_COS,
+	MNM_EXP,
+	MNM_LGN,
+	MNM_LOF,
+	MNM_MNF,
+	MNM_MVF,
+	MNM_NRM,
+	MNM_RND,
+	MNM_SIN,
+	MNM_SQT,
+	MNM_TAN,
+	MNM_URD,
+
+/* Other Stuff. */
+
+	MNM_QADD,
+	MNM_QSUB,
+	MNM_QDADD,
+	MNM_QDSUB,
+	MNM_CLZ,
+	MNM_BKPT,
+	MNM_PLD,
+
+/* Branches */
+
+	MNM_BLX,
+	MNM_BL,
+	MNM_BX,
+	MNM_B,
+
+/* &F (Directives) */
+
+	MNM_ADR,
+	MNM_ALIGN,
+	MNM_DCB,
+	MNM_DCF,
+	MNM_DCW,
+	MNM_DCD,
+	MNM_EQUB,
+	MNM_EQUD,
+	MNM_EQUF,
+	MNM_EQUS,
+	MNM_EQUW,
+	MNM_NOP,
+	MNM_OPT,
+
+/* End Of List */
+
+	MAX_MNEMONICS
 };
+
+
+/**
+ * The mnemonic definition structure, holding details of a single mnemonic.
+ */
 
 struct asm_mnemonic_definition {
 	char			*name;			/**< The name of the mnemonic.					*/
