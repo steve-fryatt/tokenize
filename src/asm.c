@@ -358,7 +358,9 @@ void asm_process_keyword(enum parse_keyword keyword)
 		return;
 	}
 
-	/* Otherwise, we're looking for whole tokenised keywords. */
+	/* Otherwise, we're looking for whole tokenised keywords. Scan the list
+	 * of mnemonics and see if we can find a match for this token.
+	 */
 
 	while (asm_mnemonics[entry].name != NULL && asm_mnemonics[entry].keyword != keyword)
 		entry++;
@@ -366,11 +368,19 @@ void asm_process_keyword(enum parse_keyword keyword)
 	if (asm_mnemonics[entry].name == NULL)
 		return;
 
+	/* If the token matched, and we're not at the start of a statement, this
+	 * is unexpected...
+	 */
+
 	if (asm_current_state != ASM_AT_START && asm_current_state != ASM_FOUND_LABEL) {
 		asm_current_state = ASM_EXTRA_MNEMONIC;
 		printf("Found unexpected keyword as token: %s\n", asm_mnemonics[entry].name);
 		return;
 	}
+
+	/* Otherwise, we've found a mnemonic. Record that in case we get called
+	 * with some variable text to check.
+	 */
 
 	asm_current_state = ASM_FOUND_TOKEN;
 	asm_current_mnemonic = entry;
@@ -402,14 +412,28 @@ void asm_process_variable(char **text)
 		return;
 	}
 
+	/* Otherwise, there are a range of ways that we can start a new assembler
+	 * statement. Work through all of these in turn.
+	 */
+
 	if (asm_current_state == ASM_FOUND_TOKEN) {
+		/* If we've found a valid tokenised mnemonic, then check to see
+		 * if that was the last thing in the buffer (ie. if this new text
+		 * is contiguous). If it was, then we need to check for condition
+		 * codes; otherwise there's been a space and we need to look for
+		 * parameters.
+		 */ 
+
 		if (*(*text - 1) == (char) parse_get_token(asm_mnemonics[asm_current_mnemonic].keyword))
 			asm_current_state = ASM_TEST_CONDITIONAL;
 		else
 			asm_current_state = ASM_TEST_PARAMETERS;
 	} else if ((asm_current_state == ASM_FOUND_OR) && (*(*text - 1) == ((char) parse_get_token(KWD_OR)))) {
-		printf("Special case for OR\n");
-	
+		/* If we've found a tokenised OR as the last thing in the buffer,
+		 * and the next character is an R, we've found an ORR mnemonic and
+		 * need to move on to testing condition codes.
+		 */
+
 		if (toupper(**text) == 'R') {
 			printf("Found keyword as OR + R: %s in %s\n", asm_mnemonics[MNM_ORR].name, *text);
 			*text += 1;
@@ -418,8 +442,11 @@ void asm_process_variable(char **text)
 			asm_current_parameter = asm_mnemonics[MNM_ORR].parameters;
 		}
 	} else if ((asm_current_state == ASM_FOUND_MOVE) && (*(*text - 1) == ((char) parse_get_token(KWD_MOVE)))) {
-		printf("Special case for MOVE\n");
-	
+		/* If we've found a tokenised MOVE as the last thing in the buffer,
+		 * and the next character is a Q, we've found a MOVEQ mnemonic and
+		 * need to move on to testing possible suffixes.
+		 */
+
 		if (toupper(**text) == 'Q') {
 			printf("Found keyword as MOVE + Q: %s in %s\n", asm_mnemonics[MNM_ORR].name, *text);
 			*text += 1;
@@ -430,6 +457,16 @@ void asm_process_variable(char **text)
 	} else if (asm_current_state == ASM_AT_START || asm_current_state == ASM_FOUND_LABEL) {
 		int			i, longest = 0;
 		enum asm_mnemonic	entry = 0, found = MNM_NO_MATCH;
+
+		/* Failing that, if we're at the start of a statement, test the
+		 * text in the buffer to see if it forms one of the valid
+		 * mnemonics. Test the text against the list of mnemonics, taking
+		 * the longest match we can find (so that "BIC" mathes "BIC" and
+		 * not "B", for example).
+		 *
+		 * If a match is found, we move on to looking for condition
+		 * codes.
+		 */
 
 		while (asm_mnemonics[entry].name != NULL) {
 			for (i = 0; asm_mnemonics[entry].name[i] != '\0' && (*text)[i] != '\0' && asm_mnemonics[entry].name[i] == toupper((*text)[i]); i++);
@@ -450,15 +487,30 @@ void asm_process_variable(char **text)
 			asm_current_parameter = asm_mnemonics[found].parameters;
 		}
 	}
-	
+
+	/* If we're ready to test a condition code, carry out that test now. */
+
 	if (asm_current_state == ASM_TEST_CONDITIONAL && asm_current_mnemonic != MNM_NO_MATCH) {
 		printf("Testing conditionals...\n");
 		if (asm_mnemonics[asm_current_mnemonic].conditionals == NULL) {
+			/* If the mnemonic doesn't take condition codes, move
+			 * on to test any suffixes.
+			 */
+
 			asm_current_state = ASM_TEST_SUFFIX;
 		} else if (**text == '\0') {
+			/* If we've reached the end of the buffer, there can't be
+			 * any suffixes so move straight on to parameters.
+			 */
+
 			asm_current_state = ASM_TEST_PARAMETERS;
 		} else {
 			char	*conditional = NULL;
+
+			/* Otherwise, try to match the text against one of the
+			 * list of condition codes. If we match, push the pointer
+			 * on past the code; either way move on to test suffixes.
+			 */
 
 			if ((conditional = asm_match_list(asm_mnemonics[asm_current_mnemonic].conditionals, *text)) != NULL) {
 				printf("Found conditional as text: %s in %s\n", conditional, *text);
@@ -469,12 +521,24 @@ void asm_process_variable(char **text)
 		}
 	}
 
+	/* If we're ready to test suffixes, carry out the test now. */
+
 	if (asm_current_state == ASM_TEST_SUFFIX && asm_current_mnemonic != MNM_NO_MATCH) {
 		printf("Testing suffixes...\n");
 		if (asm_mnemonics[asm_current_mnemonic].suffixes == NULL || **text == '\0') {
+			/* If there are no suffixes defined for this mnemonic, move
+			 * straight on to testing parameters.
+			 */
+
 			asm_current_state = ASM_TEST_PARAMETERS;
 		} else {
 			char	*suffix = NULL;
+
+			/* Otherwise, try to match the text against one of the
+			 * list of possible suffixes. If we match, push the pointer
+			 * on past the text; either way, move on to test for
+			 * the first parameter.
+			 */
 
 			if ((suffix = asm_match_list(asm_mnemonics[asm_current_mnemonic].suffixes, *text)) != NULL) {
 				printf("Found suffix as text: %s in %s\n", suffix, *text);
