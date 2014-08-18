@@ -600,11 +600,9 @@ void asm_process_keyword(enum parse_keyword keyword)
 
 	if ((asm_current_state == ASM_AT_START || asm_current_state == ASM_FOUND_LABEL) && keyword == KWD_OR) {
 		asm_current_state = ASM_FOUND_OR;
-		printf("Found OR as token\n");
 		return;
 	} else if ((asm_current_state == ASM_AT_START || asm_current_state == ASM_FOUND_LABEL) && keyword == KWD_MOVE) {
 		asm_current_state = ASM_FOUND_MOVE;
-		printf("Found MOVE as token\n");
 		return;
 	}
 
@@ -624,7 +622,6 @@ void asm_process_keyword(enum parse_keyword keyword)
 
 	if (asm_current_state != ASM_AT_START && asm_current_state != ASM_FOUND_LABEL) {
 		asm_current_state = ASM_EXTRA_MNEMONIC;
-		printf("Found unexpected keyword as token: %s\n", asm_mnemonics[entry].name);
 		return;
 	}
 
@@ -635,8 +632,6 @@ void asm_process_keyword(enum parse_keyword keyword)
 	asm_current_state = ASM_FOUND_TOKEN;
 	asm_current_mnemonic = entry;
 	asm_current_parameter = asm_mnemonics[entry].parameters;
-
-	printf("Found keyword as token: %s\n", asm_mnemonics[entry].name);
 }
 
 
@@ -685,7 +680,6 @@ void asm_process_variable(char **text)
 		 */
 
 		if (toupper(**text) == 'R') {
-			printf("Found keyword as OR + R: %s in %s\n", asm_mnemonics[MNM_ORR].name, *text);
 			*text += 1;
 			asm_current_state = ASM_TEST_CONDITIONAL;
 			asm_current_mnemonic = MNM_ORR;
@@ -698,7 +692,6 @@ void asm_process_variable(char **text)
 		 */
 
 		if (toupper(**text) == 'Q') {
-			printf("Found keyword as MOVE + Q: %s in %s\n", asm_mnemonics[MNM_ORR].name, *text);
 			*text += 1;
 			asm_current_state = ASM_TEST_PARAMETERS;
 			asm_current_mnemonic = MNM_MOV;
@@ -730,7 +723,6 @@ void asm_process_variable(char **text)
 		}
 
 		if (found != MNM_NO_MATCH) {
-			printf("Found keyword as text: %s in %s\n", asm_mnemonics[found].name, *text);
 			*text += strlen(asm_mnemonics[found].name);
 			asm_current_state = ASM_TEST_CONDITIONAL;
 			asm_current_mnemonic = found;
@@ -741,7 +733,6 @@ void asm_process_variable(char **text)
 	/* If we're ready to test a condition code, carry out that test now. */
 
 	if (asm_current_state == ASM_TEST_CONDITIONAL && asm_current_mnemonic != MNM_NO_MATCH) {
-		printf("Testing conditionals...\n");
 		if (asm_mnemonics[asm_current_mnemonic].conditionals == NULL) {
 			/* If the mnemonic doesn't take condition codes, move
 			 * on to test any suffixes.
@@ -762,10 +753,8 @@ void asm_process_variable(char **text)
 			 * on past the code; either way move on to test suffixes.
 			 */
 
-			if ((conditional = asm_match_list(asm_mnemonics[asm_current_mnemonic].conditionals, *text)) != NULL) {
-				printf("Found conditional as text: %s in %s\n", conditional, *text);
+			if ((conditional = asm_match_list(asm_mnemonics[asm_current_mnemonic].conditionals, *text)) != NULL)
 				*text += strlen(conditional);
-			}
 
 			asm_current_state = ASM_TEST_SUFFIX;
 		}
@@ -774,7 +763,6 @@ void asm_process_variable(char **text)
 	/* If we're ready to test suffixes, carry out the test now. */
 
 	if (asm_current_state == ASM_TEST_SUFFIX && asm_current_mnemonic != MNM_NO_MATCH) {
-		printf("Testing suffixes...\n");
 		if (asm_mnemonics[asm_current_mnemonic].suffixes == NULL || **text == '\0') {
 			/* If there are no suffixes defined for this mnemonic, move
 			 * straight on to testing parameters.
@@ -790,10 +778,8 @@ void asm_process_variable(char **text)
 			 * the first parameter.
 			 */
 
-			if ((suffix = asm_match_list(asm_mnemonics[asm_current_mnemonic].suffixes, *text)) != NULL) {
-				printf("Found suffix as text: %s in %s\n", suffix, *text);
+			if ((suffix = asm_match_list(asm_mnemonics[asm_current_mnemonic].suffixes, *text)) != NULL)
 				*text += strlen(suffix);
-			}
 
 			asm_current_state = ASM_TEST_PARAMETERS;
 		}
@@ -811,10 +797,8 @@ void asm_process_variable(char **text)
 			&& asm_current_parameter != NULL && *asm_current_parameter != NULL) {
 		char	*param = NULL;
 
-		while ((param = asm_match_list(*asm_current_parameter, *text)) != NULL) {
-			printf("Found parameter as text: %s in %s\n", param, *text);
+		while ((param = asm_match_list(*asm_current_parameter, *text)) != NULL)
 			*text += strlen(param);
-		}
 	}
 }
 
