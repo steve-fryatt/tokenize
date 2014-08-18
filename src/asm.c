@@ -297,7 +297,7 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 
 	/* End */
 
-	{NULL,		KWD_NO_MATCH,	NULL}
+	{NULL,		KWD_NO_MATCH,	NULL,			NULL,			NULL}
 };
 
 enum asm_state {
