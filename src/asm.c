@@ -67,10 +67,36 @@ struct asm_mnemonic_definition {
 	char			***parameters;		/**< A list of parameter lists.					*/
 };
 
-/* Condition Codes. */
+/**
+ * Condition Codes.
+ */
 
 static char *asm_conditionals[] = {"AL", "CC", "CS", "EQ", "GE", "GT", "HI", "HS",
 		"LE", "LO", "LS", "LT", "MI", "NE", "NV", "PL", "VC", "VS", NULL};
+
+/**
+ * Mnemonic Suffixes.
+ */
+
+static char *asm_suffix_S[] = {"S", NULL};
+static char *asm_suffix_SP[] = {"SP", "S", "P", NULL};
+static char *asm_suffix_E[] = {"E", NULL};
+static char *asm_suffix_B[] = {"B", NULL};
+static char *asm_suffix_L[] = {"L", NULL};
+static char *asm_suffix_ldm[] = {"DA", "DB", "EA", "ED", "FA", "FD", "IA", "IB", NULL};
+static char *asm_suffix_ldr[] = {"BT", "SB", "SH", "B", "H", "T", NULL};
+static char *asm_suffix_dcf[] = {"D", "E", "S", NULL};
+static char *asm_suffix_fp_all[] = {"DM", "DP", "DZ", "EM", "EP", "EZ", "SM", "SP", "SZ", "D", "E", "S", NULL};
+static char *asm_suffix_fp_single[] = {"SM", "SP", "SZ", "S", NULL};
+static char *asm_suffix_fp_ldm[] = {"EA", "FD", NULL};
+
+/**
+ * Parameter Content Lists.
+ */
+
+/* No expected matches (ie. treat everything as a variable name). */
+
+static char *asm_no_params[] = {NULL};
 
 /* ARM Registers. */
 
@@ -97,222 +123,248 @@ static char *asm_fpreg[] = {"F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", NULL
 static char *asm_copros[] = {"CP0", "CP1", "CP2", "CP3", "CP4", "CP5", "CP6", "CP7",
 		"CP8", "CP9", "CP10", "CP11", "CP12", "CP13", "CP14", "CP15", NULL};
 
+/* Status Registers. */
+
 static char *asm_statusmrs[] = {"CPSR", "SPSR", NULL};
-static char *asm_statusmsr[] = {"CPSR_C", "CPSR_F", "CPSR_S", "CPSR_X", "SPSR_C", "SPSR_F", "SPSR_S", "SPSR_X", NULL};
 
-static char *asm_movsuffix[] = {"S", NULL};
-static char *asm_cmpsuffix[] = {"SP", "S", "P", NULL};
-static char *asm_loadmsuffix[] = {"DA", "DB", "EA", "ED", "FA", "FD", "IA", "IB", NULL};
-static char *asm_fploadmsuffix[] = {"EA", "FD", NULL};
-static char *asm_loadsuffix[] = {"BT", "SB", "SH", "B", "H", "T", NULL};
-static char *asm_fpsuffix[] = {"DM", "DP", "DZ", "EM", "EP", "EZ", "SM", "SP", "SZ", "D", "E", "S", NULL};
-static char *asm_fpsuffix_single[] = {"SM", "SP", "SZ", "S", NULL};
-static char *asm_fpcmpsuffix[] = {"E", NULL};
-static char *asm_swpsuffix[] = {"B", NULL};
-static char *asm_ldcstcsuffix[] = {"L", NULL};
-static char *asm_equfsuffix[] = {"D", "E", "S", NULL};
+/* Status Registers with Bitfields. */
 
-static char *asm_no_params[] = {NULL};
+static char *asm_statusmsr[] = {"CPSR_C", "CPSR_F", "CPSR_S", "CPSR_X",
+		"SPSR_C", "SPSR_F", "SPSR_S", "SPSR_X", NULL};
 
-static char **asm_none[] = {NULL};
+/**
+ * Parameter Lists.
+ */
 
-static char **asm_one[] = {asm_registers, NULL};
-static char **asm_two[] = {asm_registers, asm_shifts, NULL};
-static char **asm_three[] = {asm_registers, asm_registers, asm_shifts, NULL};
-static char **asm_three1[] = {asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_four[] = {asm_registers, asm_registers, asm_registers, asm_shifts, NULL};
-static char **asm_loadm[] = {asm_registers, asm_registers, asm_registers, asm_registers,
+/* No parameters which look like variable names. */
+
+static char **asm_param_none[] = {NULL};
+
+/* One ARM register parameter*/
+
+static char **asm_param_1[] = {asm_registers, NULL};
+
+/* Two ARM register parameters. */
+
+static char **asm_param_2_shift[] = {asm_registers, asm_shifts, NULL};
+
+/* Three ARM register parameters. */
+
+static char **asm_param_3[] = {asm_registers, asm_registers, asm_registers, NULL};
+static char **asm_param_3_shift[] = {asm_registers, asm_registers, asm_shifts, NULL};
+
+/* Four ARM register parameters. */
+
+static char **asm_param_4[] = {asm_registers, asm_registers, asm_registers, asm_registers, NULL};
+static char **asm_param_4_shift[] = {asm_registers, asm_registers, asm_registers, asm_shifts, NULL};
+
+/* 16 ARM register parameters (worst-case LDM and STM). */
+
+static char **asm_param_ldm[] = {asm_registers, asm_registers, asm_registers, asm_registers,
 		asm_registers, asm_registers, asm_registers, asm_registers, asm_registers,
 		asm_registers, asm_registers, asm_registers, asm_registers, asm_registers,
 		asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_multhree[] = {asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_mulfour[] = {asm_registers, asm_registers, asm_registers, asm_registers, NULL};
-static char **asm_param_copro[] = {asm_copros, asm_no_params, asm_coproreg, asm_coproreg, asm_coproreg, asm_no_params, NULL};
-static char **asm_param_copro1[] = {asm_copros, asm_no_params, asm_registers, asm_coproreg, asm_coproreg, NULL};
-static char **asm_param_copro2[] = {asm_copros, asm_no_params, asm_registers, asm_registers, asm_coproreg, NULL};
+
+/* Move data between ARM registers and Status registers. */
+
 static char **asm_param_mrs[] = {asm_registers, asm_statusmrs, NULL};
 static char **asm_param_msr[] = {asm_statusmsr, asm_registers, NULL};
-static char **asm_param_ldcstc[] = {asm_copros, asm_registers, NULL};
 
-static char **asm_fp_two[] = {asm_fpreg, asm_fpreg, NULL};
-static char **asm_fp_three[] = {asm_fpreg, asm_fpreg, asm_fpreg, NULL};
-static char **asm_fp_fix[] = {asm_registers, asm_fpreg, NULL};
-static char **asm_fp_flt[] = {asm_fpreg, asm_registers, NULL};
-static char **asm_fp_load[] = {asm_fpreg, asm_registers, NULL};
-static char **asm_fp_loadm[] = {asm_fpreg, asm_no_params, asm_registers, NULL};
+/* Move data between ARM and Co-Processor. */
+
+static char **asm_param_cp_cdp[] = {asm_copros, asm_no_params, asm_coproreg,
+		asm_coproreg, asm_coproreg, asm_no_params, NULL};
+static char **asm_param_cp_mcr[] = {asm_copros, asm_no_params, asm_registers,
+		asm_coproreg, asm_coproreg, NULL};
+static char **asm_param_cp_mcrr[] = {asm_copros, asm_no_params, asm_registers,
+		asm_registers, asm_coproreg, NULL};
+static char **asm_param_cp_ldc[] = {asm_copros, asm_registers, NULL};
+
+/* Floating Point operations. */
+
+static char **asm_param_fp_2[] = {asm_fpreg, asm_fpreg, NULL};
+static char **asm_param_fp_3[] = {asm_fpreg, asm_fpreg, asm_fpreg, NULL};
+static char **asm_param_fp_fix[] = {asm_registers, asm_fpreg, NULL};
+static char **asm_param_fp_flt[] = {asm_fpreg, asm_registers, NULL};
+static char **asm_param_fp_ldf[] = {asm_fpreg, asm_registers, NULL};
+static char **asm_param_fp_lfm[] = {asm_fpreg, asm_no_params, asm_registers, NULL};
+
+/**
+ * Assembler Mnemonic Definitions.
+ */
 
 static struct asm_mnemonic_definition asm_mnemonics[] = {
 	/* &0 */
 
-	{"ADC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"ADD",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"AND",		KWD_AND,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"BIC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"EOR",		KWD_EOR,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"ORR",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"RSB",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"RSC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"SBC",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
-	{"SUB",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_three},
+	{"ADC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"ADD",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"AND",		KWD_AND,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"BIC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"EOR",		KWD_EOR,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"ORR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"RSB",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"RSC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"SBC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
+	{"SUB",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3_shift},
 
 	/* &1 */
 
-	{"CMN",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix,		asm_two},
-	{"CMP",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix,		asm_two},
-	{"TEQ",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix,		asm_two},
-	{"TST",		KWD_NO_MATCH,	asm_conditionals,	asm_cmpsuffix,		asm_two},
+	{"CMN",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_SP,		asm_param_2_shift},
+	{"CMP",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_SP,		asm_param_2_shift},
+	{"TEQ",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_SP,		asm_param_2_shift},
+	{"TST",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_SP,		asm_param_2_shift},
 
 	/* &2 */
 
-	{"MOV",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_two},
-	{"MVN",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_two},
+	{"MOV",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_2_shift},
+	{"MVN",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_2_shift},
 
 	/* &3 */
 
-	{"MUL",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_multhree},
-	{"MLA",		KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_mulfour},
-	{"SMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_mulfour},
-	{"SMUAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_mulfour},
-	{"UMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_mulfour},
-	{"UMULL",	KWD_NO_MATCH,	asm_conditionals,	asm_movsuffix,		asm_mulfour},
-	{"SMULB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_multhree},
-	{"SMULTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_multhree},
-	{"SMULWB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_multhree},
-	{"SMULWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_multhree},
-	{"SMLAB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_mulfour},
-	{"SMLATB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_mulfour},
-	{"SMLAWB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_mulfour},
-	{"SMLAWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_mulfour},
+	{"MUL",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_3},
+	{"MLA",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_4},
+	{"SMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_4},
+	{"SMUAL",	KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_4},
+	{"UMLAL",	KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_4},
+	{"UMULL",	KWD_NO_MATCH,	asm_conditionals,	asm_suffix_S,		asm_param_4},
+	{"SMULB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"SMULTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"SMULWB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"SMULWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"SMLAB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4},
+	{"SMLATB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4},
+	{"SMLAWB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4},
+	{"SMLAWTB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4},
 
 	/* &4 */
 
-	{"LDR",		KWD_NO_MATCH,	asm_conditionals,	asm_loadsuffix,		asm_three},
-	{"LDRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_four},
+	{"LDR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_3_shift},
+	{"LDRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4_shift},
 
 	/* &5 */
 
-	{"STR",		KWD_NO_MATCH,	asm_conditionals,	asm_loadsuffix,		asm_three},
-	{"STRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_four},
+	{"STR",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldr,		asm_param_3_shift},
+	{"STRD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_4_shift},
 
 	/* &6 */
 
-	{"LDM",		KWD_NO_MATCH,	asm_conditionals,	asm_loadmsuffix,	asm_loadm},
+	{"LDM",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldm,		asm_param_ldm},
 
 	/* &7 */
 
-	{"STM",		KWD_NO_MATCH,	asm_conditionals,	asm_loadmsuffix,	asm_loadm},
+	{"STM",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_ldm,		asm_param_ldm},
 
 	/* &8 */
 
-	{"SWI",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+	{"SWI",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
 
 	/* &9 */
 
-	{"CDP",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro},
-	{"CDP2",	KWD_NO_MATCH,	NULL		,	NULL,			asm_param_copro},
-	{"LDC",		KWD_NO_MATCH,	asm_conditionals,	asm_ldcstcsuffix,	asm_param_ldcstc},
-	{"LDC2",	KWD_NO_MATCH,	NULL,			asm_ldcstcsuffix,	asm_param_ldcstc},
-	{"MCR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
-	{"MCR2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_copro2},
-	{"MRC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
-	{"MRC2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_copro1},
-	{"MCRR",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
-	{"MRRC",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_copro2},
-	{"STC",		KWD_NO_MATCH,	asm_conditionals,	asm_ldcstcsuffix,	asm_param_ldcstc},
-	{"STC2",	KWD_NO_MATCH,	NULL,			asm_ldcstcsuffix,	asm_param_ldcstc},
+	{"CDP",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_cp_cdp},
+	{"CDP2",	KWD_NO_MATCH,	NULL		,	NULL,			asm_param_cp_cdp},
+	{"LDC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_L,		asm_param_cp_ldc},
+	{"LDC2",	KWD_NO_MATCH,	NULL,			asm_suffix_L,		asm_param_cp_ldc},
+	{"MCR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_cp_mcr},
+	{"MCR2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_cp_mcr},
+	{"MRC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_cp_mcr},
+	{"MRC2",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_cp_mcr},
+	{"MCRR",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_cp_mcrr},
+	{"MRRC",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_cp_mcrr},
+	{"STC",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_L,		asm_param_cp_ldc},
+	{"STC2",	KWD_NO_MATCH,	NULL,			asm_suffix_L,		asm_param_cp_ldc},
 
 	/* &A */
 
 	{"MRS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_mrs},
 	{"MSR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_msr},
-	{"SWP",		KWD_NO_MATCH,	asm_conditionals,	asm_swpsuffix,		asm_multhree},
+	{"SWP",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_B,		asm_param_3},
 
 	/* &B */
 
-	{"LDF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_load},
-	{"LFM",		KWD_NO_MATCH,	asm_conditionals,	asm_fploadmsuffix,	asm_fp_loadm},
-	{"STF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_load},
-	{"SFM",		KWD_NO_MATCH,	asm_conditionals,	asm_fploadmsuffix,	asm_fp_loadm},
+	{"LDF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_ldf},
+	{"LFM",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_ldm,	asm_param_fp_lfm},
+	{"STF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_ldf},
+	{"SFM",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_ldm,	asm_param_fp_lfm},
 
 	/* &C */
 
-	{"CMF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpcmpsuffix,	asm_fp_two},
-	{"CNF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpcmpsuffix,	asm_fp_two},
-	{"FIX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_fp_fix},
-	{"FLT",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_fp_flt},
-	{"RFC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
-	{"RFS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
-	{"WFC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
-	{"WFS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
+	{"CMF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_E,		asm_param_fp_2},
+	{"CNF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_E,		asm_param_fp_2},
+	{"FIX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_fp_fix},
+	{"FLT",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_fp_flt},
+	{"RFC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"RFS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"WFC",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"WFS",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
 
 	/* &D */
 
-	{"ADF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"DVF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"FDV",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix_single,	asm_fp_three},
-	{"FML",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix_single,	asm_fp_three},
-	{"FRD",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix_single,	asm_fp_three},
-	{"MUF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"POL",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"POW",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"RDF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"RMF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"RPW",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"RSF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
-	{"SUF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_three},
+	{"ADF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"DVF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"FDV",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_single,	asm_param_fp_3},
+	{"FML",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_single,	asm_param_fp_3},
+	{"FRD",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_single,	asm_param_fp_3},
+	{"MUF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"POL",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"POW",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"RDF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"RMF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"RPW",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"RSF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
+	{"SUF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_3},
 
 	/* &E */
 
-	{"ABS",		KWD_ABS,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"ACS",		KWD_ACS,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"ASN",		KWD_ASN,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"ATN",		KWD_ATN,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"COS",		KWD_COS,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"EXP",		KWD_EXP,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"LGN",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"LOG",		KWD_LOG,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"MNF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"MVF",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"NRM",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"RND",		KWD_RND,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"SIN",		KWD_SIN,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"SQT",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"TAN",		KWD_TAN,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
-	{"URD",		KWD_NO_MATCH,	asm_conditionals,	asm_fpsuffix,		asm_fp_two},
+	{"ABS",		KWD_ABS,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"ACS",		KWD_ACS,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"ASN",		KWD_ASN,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"ATN",		KWD_ATN,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"COS",		KWD_COS,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"EXP",		KWD_EXP,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"LGN",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"LOG",		KWD_LOG,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"MNF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"MVF",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"NRM",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"RND",		KWD_RND,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"SIN",		KWD_SIN,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"SQT",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"TAN",		KWD_TAN,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
+	{"URD",		KWD_NO_MATCH,	asm_conditionals,	asm_suffix_fp_all,	asm_param_fp_2},
 
 	/* Other Stuff */
 
-	{"QADD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_three1},
-	{"QSUB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_three1},
-	{"QDADD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_three1},
-	{"QDSUB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_three1},
-	{"CLZ",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"BKPT",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"PLD",		KWD_NO_MATCH,	NULL,			NULL,			asm_two},
+	{"QADD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"QSUB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"QDADD",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"QDSUB",	KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_3},
+	{"CLZ",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
+	{"BKPT",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"PLD",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_2_shift},
 
 
 	/* Branches */
 
-	{"BLX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
-	{"BL",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"BX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
-	{"B",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_none},
+	{"BLX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"BL",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
+	{"BX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
+	{"B",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
 
 	/* &F (Directives) */
 
-	{"ADR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_one},
-	{"ALIGN",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"DCB",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"DCF",		KWD_NO_MATCH,	NULL,			asm_equfsuffix,		asm_none},
-	{"DCW",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"DCD",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"EQUB",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"EQUD",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"EQUF",	KWD_NO_MATCH,	NULL,			asm_equfsuffix,		asm_none},
-	{"EQUS",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"EQUW",	KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"NOP",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
-	{"OPT",		KWD_NO_MATCH,	NULL,			NULL,			asm_none},
+	{"ADR",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"ALIGN",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"DCB",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"DCF",		KWD_NO_MATCH,	NULL,			asm_suffix_dcf,		asm_param_none},
+	{"DCW",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"DCD",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"EQUB",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"EQUD",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"EQUF",	KWD_NO_MATCH,	NULL,			asm_suffix_dcf,		asm_param_none},
+	{"EQUS",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"EQUW",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"NOP",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
+	{"OPT",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
 
 	/* End */
 
