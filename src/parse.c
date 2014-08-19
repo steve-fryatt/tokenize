@@ -945,7 +945,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 				for_state = FOR_COMPLETE;
 			if (sys_state == SYS_NAME)
 				sys_state = SYS_INPUT;
-			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if ((**read >= '0' && **read <= '9') || **read == '&' || **read == '%' || **read == '.') {
 			/* Handle numeric constants. */
@@ -959,7 +958,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			library_path_due = false;
 			if (sys_state == SYS_NAME)
 				sys_state = SYS_INPUT;
-			definition_state = DEF_NONE;
 			clean_to_end = false;
 		} else if (**read == '*' && statement_left) {
 			/* It's a star command, so run out to the end of the line. */
@@ -987,9 +985,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			if (**read != ',') {
 				constant_due = false;
 				statement_left = false;
-				
-				if (dim_state == DIM_ASSIGN)
-					dim_state = DIM_READ;
 			}
 
 			/* The assembler code needs to know about commas which aren't
@@ -1018,7 +1013,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			if (dim_state == DIM_READ && **read == ',')
 				dim_state = DIM_ASSIGN;
-			else if (dim_state == DIM_ASSIGN)
+			else if (dim_state == DIM_ASSIGN && **read != ',')
 				dim_state = DIM_READ;
 
 			/* Following a FOR, we drop out of assigment if we see
