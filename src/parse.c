@@ -890,6 +890,11 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 
 			**write = '\0';
 
+			/* If we're in an assembler block, try to skip past anything that could
+			 * be construed as an assembler mnemonic before handing the text to
+			 * the variable module for processing.
+			 */
+
 			if (*assembler == true)
 				asm_process_variable(&variable_name);
 
@@ -908,9 +913,6 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			 *
 			 * Arrays are only "assigned" if they're being DIMmed. All other
 			 * accesses are treated as a read. 
-			 *
-			 * This is broken, as it does not take into account assembler
-			 * nemonics being treated as variables.
 			 */
 
 			indirection = !((*(*read - 1) == '$') || (**read != '!' && **read != '?'));

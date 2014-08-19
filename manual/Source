@@ -160,7 +160,7 @@ When tokenizing a file, <cite>Tokenize</cite> can replace specific variables wit
 
 A <param>-define</param> parameter is followed by a variable assignment in the form <code>&lt;name&gt;=&lt;value&gt;</code>. To assign an integer variable <code>int%</code> the constant value 10, for example, use <command>-define int%=10</command>; to give the string variable <code>name$</code> the value "Hello World", use <command>-define &quot;name$=Hello&nbsp;World&quot;</command>. Note that string values are not surrounded by double quotation marks, but if the value contains spaces then the whole parameter value must be enclosed as here.
 
-Note that support for constants is currently limited: all references to the variable will be replaced, including those defined as <code>LOCAL</code>. Additionally, matches with the variable names within blocks of assembler code will also be replaced. The result is unlikely to produce working code.
+Note that support for constants is currently limited: all references to the variable will be replaced, including those defined as <code>LOCAL</code>. In general, <cite>Tokenize</cite> will correctly identify assembler mnemonics within assembler blocks, but there may be some sequences which are not recognised and get treated as variables by mistake. It is advisable to check the generated code carefully when substitutions are being carried out.
 
 Within these limitations, however, it is possible to use constants to insert details such as build dates into code. For example, given the code
 
