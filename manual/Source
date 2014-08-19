@@ -162,6 +162,20 @@ A <param>-define</param> parameter is followed by a variable assignment in the f
 
 Note that support for constants is currently limited: all references to the variable will be replaced, including those defined as <code>LOCAL</code>. In general, <cite>Tokenize</cite> will correctly identify assembler mnemonics within assembler blocks, but there may be some sequences which are not recognised and get treated as variables by mistake. It is advisable to check the generated code carefully when substitutions are being carried out.
 
+Remember that there are some locations in BASIC where variables can be used but constant values can not. An example is diadic indirection, where
+
+<codeblock>
+PRINT a%!0
+</codeblock>
+
+is valid and will print the integer value stored at the location pointed to by a%, while
+
+<codeblock>
+PRINT &8200!0
+</codeblock>
+
+is unlikely to have the expected effect (printing 33280 followed by the inter value stored at &0). <cite>Tokenize</cite> will not validate your choice of substitutions for you.
+
 Within these limitations, however, it is possible to use constants to insert details such as build dates into code. For example, given the code
 
 <codeblock>
