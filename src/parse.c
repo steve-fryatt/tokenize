@@ -930,7 +930,12 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 					(*assembler && variable_name > start_pos && *(variable_name - 1) == '.')));
 			}
 
-			if (variable_process(variable_name, write, array, assignment)) {
+			/* Only process variables if we're not inside an assembler
+			 * comment; the won't be seen by the interpreter if we
+			 * are!
+			 */
+
+			if (!assembler_comment && variable_process(variable_name, write, array, assignment)) {
 				msg_report(MSG_CONST_REMOVE, variable_name);
 				status = PARSE_DELETED;
 				no_clean_check = true;
