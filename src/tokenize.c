@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
 	bool			param_error = false;
 	bool			output_help = false;
 	bool			report_vars = false;
+	bool			report_unused_vars = false;
 	bool			report_procs = false;
 	bool			report_unused_procs = false;
 	bool			delete_failures = true;
@@ -260,6 +261,7 @@ int main(int argc, char *argv[])
 						report_procs = true;
 						break;
 					case 'V':
+						report_unused_vars = true;
 					case 'v':
 						report_vars = true;
 						break;
@@ -309,8 +311,9 @@ int main(int argc, char *argv[])
 #endif
 		printf(" -tab <n>               Set the tab column width to <n> spaces.\n");
 		printf(" -verbose               Generate verbose process information.\n");
-		printf(" -warn [P]              Control generation of information warnings.\n");
+		printf(" -warn [PV]             Control generation of information warnings.\n");
 		printf("                    P|p - Warn of unused|missing, multiple FN/PROC.\n");
+		printf("                    V|v - Warn of unused|missing variables.\n");
 
 		return (output_help) ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
@@ -326,7 +329,7 @@ int main(int argc, char *argv[])
 	/* Run any reports. */
 
 	if (report_vars)
-		variable_report();
+		variable_report(report_unused_vars);
 
 	if (report_procs)
 		proc_report(report_unused_procs);

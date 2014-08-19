@@ -101,9 +101,11 @@ void variable_initialise(void)
 
 /**
  * Generate a report on the variable information.
+ *
+ * \param unused		Include details of unused variables.
  */
 
-void variable_report(void)
+void variable_report(bool unused)
 {
 	int			index;
 	struct variable_entry	*list;
@@ -121,7 +123,7 @@ void variable_report(void)
 			if (list->assignments == 0 && list->reads > 0)
 				msg_report((list->array) ? MSG_VAR_MISSING_DIM : MSG_VAR_MISSING_DEF, list->name);
 
-			if (list->assignments > 0 && list->reads == 0)
+			if (unused && list->assignments > 0 && list->reads == 0)
 				msg_report((list->array) ? MSG_VAR_UNUSED_DIM : MSG_VAR_UNUSED_DEF, list->name);
 
 			list = list->next;

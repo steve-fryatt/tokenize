@@ -42,9 +42,11 @@ void variable_initialise(void);
 
 /**
  * Generate a report on the variable information.
+ *
+ * \param unused		Include details of unused variables.
  */
 
-void variable_report(void);
+void variable_report(bool unused);
 
 
 /**

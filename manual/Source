@@ -405,7 +405,38 @@ A <code>LIBRARY</code> statement with a variable following it was encountered wh
 
 <subhead title="Optional Warnings">
 
-By using the <param>-warn</param> parameter on the command line, <cite>Tokenize</cite> will emit additional warnings relating to the structure of the source code. At present, the only options are <param>-warn&nbsp;p</param> and <param>-warn&nbsp;P</param>, which perform checks on the function and procedure definitions within the code.
+By using the <param>-warn</param> parameter on the command line, <cite>Tokenize</cite> will emit additional warnings relating to the structure of the source code. At present it can check the use of variables, and the presence of function and procedure definitions in the code. The parameter is followed by a series of letters, which specify the warnings to be enabled &ndash; these may be case-sensitive.
+
+<definition target="P">
+If <param>-warn&nbsp;p</param> or <param>-warn&nbsp;P</param> are used, <cite>Tokenize</cite> will check the function and procedure definitions within the source files. A lower case <param>p</param> will report on missing or duplicate definitions; an upper case <param>P</param> will also report on any unused definitions.
+</definition>
+
+<definition target="V">
+If <param>-warn&nbsp;v</param> or <param>-warn&nbsp;V</param> are used, <cite>Tokenize</cite> will check variable and array definitions.
+
+For variables, a record is kept of each time a variable is assigned to and each time it is read. If a variable is found to have no assignments, then a warning will be raised. If an upper case <param>V</param> is used, a warning will also be given for any variable which is assigned but never read.
+
+Note that a lack of warnings will not guarantee correct execution of the code. <cite>Tokenize</cite> makes no effort to check the order in which reads and assignments are carried out, or to watch for conditional execution. As a result, the following piece of code would fail to execute due to both variables in the <code>PRINT</code> statement being undefined, despite generating no warnings.
+
+<codeblock>
+IF FALSE THEN foo% = 19
+PRINT foo%, bar%
+bar% = 21
+</codeblock>
+
+For arrays, <cite>Tokenize</cite> does not track assignments but instead records the number of uses inside and outside of <code>DIM</code> statements. A warning will be given if an array is used without any <code>DIM</code> statement; if an upper case <param>V</param> is used, a warning will also be given for any array that is dimensioned but never used.
+
+As with variables, no attempt is made to check the order of execution: the following would generate no warnings:
+
+<codeblock>
+array%(0) = 1
+DIM array%(10)
+</codeblock>
+
+Multiple instances of an array being dimensioned are also not reported, as this is valid in the context of <code>LOCAL</code> arrays.
+</definition>
+
+The warning messages which can be reported are as follows:
 
 <definition target="No definition found for &lt;name&gt;">
 This warning, which will be generated if <param>-warn&nbsp;p</param> or <param>-warn&nbsp;P</param> is included on the command line, indicates that the source contains <code>FN</code> or <code>PROC</code> calls for which <code>DEF</code> statements have not been seen. These warnings are likely to be spurious unless libraries are being linked by <cite>Tokenize</cite>.
@@ -417,6 +448,22 @@ Also generated if <param>-warn&nbsp;p</param> or <param>-warn&nbsp;P</param> is 
 
 <definition target="&lt;name&gt; is defined but not used">
 This warning is only generated if <param>-warn&nbsp;P</param> is included on the command line, and indicates that a <code>DEF</code> statement has been found for an <code>FN</code> or <code>PROC</code> which is never called from within the source code.
+</definition>
+
+<definition target="Variable &lt;name&gt; referenced but not assigned">
+This warning is generated if <param>-warn&nbsp;v</param> or <param>-warn&nbsp;V</param> is passed on the command line, and indicates that a variable has been found whose value is never assigned.
+</definition>
+
+<definition target="Variable &lt;name&gt; assigned but not references">
+This warning is only generated if <param>-warn&nbsp;V</param> is passed on the command line, and indicates that a variable has been found whose value is assigned but apparently never referenced.
+</definition>
+
+<definition target="Array &lt;name&gt; used but not defined">
+This warning is generated if <param>-warn&nbsp;v</param> or <param>-warn&nbsp;V</param> is passed on the command line, and indicates that an array has been found which never features in a <code>DIM</code> statement.
+</definition>
+
+<definition target="Array &lt;name&gt; defined but not used">
+This warning is only generated if <param>-warn&nbsp;V</param> is passed on the command line, and indicates that an array has been found in a <code>DIM</code> statement which never appears anywhere else in the code.
 </definition>
 
 </chapter>
