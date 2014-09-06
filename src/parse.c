@@ -421,7 +421,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	if (!options->crunch_indent) {
 		while (start < read) {
 			if (*start == '\t')
-				parse_expand_tab(&read, &write, 0, options);
+				parse_expand_tab(&start, &write, 0, options);
 			else
 				*write++ = ' ';
 			
