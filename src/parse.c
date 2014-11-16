@@ -809,6 +809,7 @@ static enum parse_status parse_process_statement(char **read, char **write, int 
 			case KWD_FOR:
 				for_state = FOR_ASSIGN;
 				break;
+			case KWD_LOCAL:
 			case KWD_MOUSE:
 			case KWD_READ:
 				list_state = LIST_ASSIGN;
