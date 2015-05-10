@@ -1,4 +1,4 @@
-# Copyright 2014, Stephen Fryatt (info@stevefryatt.org.uk)
+# Copyright 2014-2015, Stephen Fryatt (info@stevefryatt.org.uk)
 #
 # This file is part of Tokenize:
 #
@@ -66,7 +66,7 @@ else
   CC := gcc
 endif
 
-MKDIR := mkdir
+MKDIR := mkdir -p
 RM := rm -rf
 CP := cp
 
@@ -103,12 +103,16 @@ MENUGENFLAGS := -d
 
 SRCDIR := src
 MANUAL := manual
-OBJDIR := obj
+OBJROOT := obj
+OBJLINUX := linux
+OBJRO := ro
 OUTDIRLINUX := buildlinux
 OUTDIRRO:= buildro
 ifeq ($(TARGET),riscos)
+  OBJDIR := $(OBJROOT)/$(OBJRO)
   OUTDIR := $(OUTDIRRO)
 else
+  OBJDIR := $(OBJROOT)/$(OBJLINUX)
   OUTDIR := $(OUTDIRLINUX)
 endif
 
@@ -149,13 +153,8 @@ all: documentation $(OUTDIR)/$(RUNIMAGE)
 
 OBJS := $(addprefix $(OBJDIR)/, $(OBJS))
 
-$(OUTDIR)/$(RUNIMAGE): $(OBJS) $(OBJDIR)
+$(OUTDIR)/$(RUNIMAGE): $(OBJDIR) $(OBJS)
 	$(CC) $(CCFLAGS) $(LINKS) -o $(OUTDIR)/$(RUNIMAGE) $(OBJS)
-
-# Create a folder to hold the object files.
-
-$(OBJDIR):
-	$(MKDIR) $(OBJDIR)
 
 # Build the object files, and identify their dependencies.
 
@@ -169,6 +168,10 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@sed -e 's/.*://' -e 's/\\$$//' < $(@:.o=.d).tmp | fmt -1 | sed -e 's/^ *//' -e 's/$$/:/' >> $(@:.o=.d)
 	@rm -f $(@:.o=.d).tmp
 
+# Create a folder to hold the object files.
+
+$(OBJDIR):
+	$(MKDIR) $(OBJDIR)
 
 # Build the documentation
 
