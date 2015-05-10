@@ -1,4 +1,4 @@
-/* Copyright 2014, Stephen Fryatt (info@stevefryatt.org.uk)
+/* Copyright 2014-2015, Stephen Fryatt (info@stevefryatt.org.uk)
  *
  * This file is part of Tokenize:
  *
@@ -521,10 +521,12 @@ static struct asm_mnemonic_definition asm_mnemonics[] = {
 	{"BKPT",	KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
 	{"PLD",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_2_shift},
 
-
 	/* Branches */
 
+	/* BLT has a special case to avoid it being caught by BL with a following variable T. */
+
 	{"BLX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_1},
+	{"BLT",		KWD_NO_MATCH,	NULL,			NULL,			asm_param_none},
 	{"BL",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
 	{"BX",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
 	{"B",		KWD_NO_MATCH,	asm_conditionals,	NULL,			asm_param_none},
