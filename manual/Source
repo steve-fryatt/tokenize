@@ -9,7 +9,7 @@
 =============================================================================
 Tokenize - Turn ASCII Files into Tokenized BASIC                 Version $$version$$
 
-(c) Stephen Fryatt, 2014                       $$date$$
+(c) Stephen Fryatt, 2014-2017                  $$date$$
 =============================================================================
 
 </literal>
@@ -397,7 +397,7 @@ If the <param>-swi</param> option is in force, <cite>Tokenize</cite> failed to f
 </definition>
 
 <definition target="Unisolated LIBRARY not linked">
-If the <param>-link</param> option is in force then in order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite>i needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
+If the <param>-link</param> option is in force then in order to be able to remove <code>LIBRARY</code> statements after linking their associated files, <cite>Tokenize</cite> needs to know that they are self-contained. If <code>LIBRARY</code> does not appear at the start of a statement (such as if it appears in an <code>IF ... THEN</code> construct) then it will not be linked. Note that this will not catch <code>LIBRARY</code> as part of a multi-line <code>IF ... THEN ... ENDIF</code> &ndash; be aware that
 
 <codeblock>
 IF condition% = TRUE THEN
@@ -413,7 +413,7 @@ String constants must be enclosed by double quotes (&quot;...&quot;), and a pair
 </definition>
 
 <definition target="Variable LIBRARY not linked">
-A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize can not determine the name of the file and will therefore leave the statement in-situ.
+A <code>LIBRARY</code> statement with a variable following it was encountered while the <param>-link</param> option was in force. <code>LIBRARY</code> statements can only be linked if they are followed by a constant string (<code>LIBRARY &quot;LibraryFile&quot;</code>); when followed by a variable (<code>LIBRARY lib_info$</code>), <cite>Tokenize</cite> can not determine the name of the file and will therefore leave the statement in-situ.
 </definition>
 
 
@@ -468,7 +468,7 @@ This warning is only generated if <param>-warn&nbsp;P</param> is included on the
 This warning is generated if <param>-warn&nbsp;v</param> or <param>-warn&nbsp;V</param> is passed on the command line, and indicates that a variable has been found whose value is never assigned.
 </definition>
 
-<definition target="Variable &lt;name&gt; assigned but not references">
+<definition target="Variable &lt;name&gt; assigned but not referenced">
 This warning is only generated if <param>-warn&nbsp;V</param> is passed on the command line, and indicates that a variable has been found whose value is assigned but apparently never referenced.
 </definition>
 
