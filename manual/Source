@@ -82,7 +82,7 @@ NEXT I%
 
 In the latter case, the line numbers will be applied automatically as described in the following section.
 
-Keyword abbreviations are fully supported, using the rules defined in the <cite>BASIC Reference Manual</cite>. Thus <code>PRINT</code> and <code>P.</code> would both covert into the same token, while <code>OR</code> and <code>OR.</code> would not. For clarity, the use of abbreviations in source code is discouraged.
+Keyword abbreviations are fully supported, using the rules defined in the <cite>BASIC Reference Manual</cite>. Thus <code>PRINT</code> and <code>P.</code> would both convert into the same token, while <code>OR</code> and <code>OR.</code> would not. For clarity, the use of abbreviations in source code is discouraged.
 
 
 <subhead title="Line Numbers">
