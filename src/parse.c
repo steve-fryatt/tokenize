@@ -366,7 +366,7 @@ char *parse_process_line(char *line, struct parse_options *options, bool *assemb
 	bool	line_start = true;		/**< True while we're at the start of a line.				*/
 	int	real_pos = 0;			/**< The real position in the line, including expanded keywords.	*/
 	bool	all_deleted = true;		/**< True while all the statements on the line have been deleted.	*/
-	bool	statements = 0;			/**< The number of statements found on the line.			*/
+	int	statements = 0;			/**< The number of statements found on the line.			*/
 	bool	line_empty = false;		/**< Set to true if the line has nothing after the line number.		*/
 
 	/* Skip any leading whitespace on the line. */
