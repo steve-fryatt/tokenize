@@ -35,9 +35,8 @@ HELP_DATE := $(shell date "+%-d %B %Y")
 # Construct version or revision information.
 
 ifeq ($(VERSION),)
-  RELEASE := $(shell svnversion --no-newline)
-  VERSION := r$(RELEASE)
-  RELEASE := $(subst :,-,$(RELEASE))
+  RELEASE := $(shell git describe --always)
+  VERSION := $(RELEASE)
   HELP_VERSION := ----
 else
   RELEASE := $(subst .,,$(VERSION))
