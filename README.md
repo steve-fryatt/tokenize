@@ -26,7 +26,7 @@ It will also be necessary to ensure that the `SFTOOLS_BIN` and `$SFTOOLS_MAKE` v
 	export SFTOOLS_BIN=/home/steve/sftools/bin
 	export SFTOOLS_MAKE=/home/steve/sftools/make
 
-where the path is changed to suit your local settings and installation requirements. Finally, you will also need to have installed the Shared Makefiles and ManTools.
+where the path is changed to suit your local settings and installation requirements. Finally, you will also need to have installed the Shared Makefiles, ManTools and PackTools.
 
 To install Tokenize, use
 
