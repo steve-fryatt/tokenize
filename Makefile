@@ -153,7 +153,7 @@ all: documentation $(OUTDIR)/$(RUNIMAGE)
 
 OBJS := $(addprefix $(OBJDIR)/, $(OBJS))
 
-$(OUTDIR)/$(RUNIMAGE): $(OBJDIR) $(OBJS)
+$(OUTDIR)/$(RUNIMAGE): $(OUTDIR) $(OBJDIR) $(OBJS)
 	$(CC) $(CCFLAGS) $(LINKS) -o $(OUTDIR)/$(RUNIMAGE) $(OBJS)
 
 # Build the object files, and identify their dependencies.
@@ -173,9 +173,14 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 $(OBJDIR):
 	$(MKDIR) $(OBJDIR)
 
+# Create a folder to take the output.
+
+$(OUTDIR):
+	$(MKDIR) $(OUTDIR)
+
 # Build the documentation
 
-documentation: $(OUTDIR)/$(README)
+documentation: $(OUTDIR) $(OUTDIR)/$(README)
 
 $(OUTDIR)/$(README): $(MANUAL)/$(MANSRC)
 	$(MANTOOLS) -MTEXT -I$(MANUAL)/$(MANSRC) -O$(OUTDIR)/$(README) -D'version=$(HELP_VERSION)' -D'date=$(HELP_DATE)'
