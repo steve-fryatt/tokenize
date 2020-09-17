@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 
 	if (param_error || output_help || parse_options.verbose_output) {
 		printf("Tokenize %s - %s\n", BUILD_VERSION, BUILD_DATE);
-		printf("Copyright Stephen Fryatt, %s\n", BUILD_DATE + 7);
+		printf("Copyright Stephen Fryatt, 2014-%s\n", BUILD_DATE + 7);
 	}
 
 	if (param_error || output_help) {
