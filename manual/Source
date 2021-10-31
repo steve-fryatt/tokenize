@@ -573,9 +573,9 @@ Converting such code to text via <code>TEXTSAVE</code>, a text editor or similar
 Here is a list of the versions of <cite>Tokenize</cite>, along with all the changes made.
 
 
-<subhead title="Test Build">
+<subhead title="1.00 (31 October 2021)">
 
-Initial release for testing and feedback.
+Initial release build with version number.
 
 
 </chapter>
