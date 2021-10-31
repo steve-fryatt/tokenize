@@ -9,7 +9,7 @@
 =============================================================================
 Tokenize - Turn ASCII Files into Tokenized BASIC                 Version $$version$$
 
-(c) Stephen Fryatt, 2014-2020                  $$date$$
+(c) Stephen Fryatt, 2014-2021                  $$date$$
 =============================================================================
 
 </literal>
@@ -26,7 +26,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 See the Licence for the specific language governing permissions and limitations under the Licence.
 
-The source for <cite>Tokenize</cite> can be found alongside this binary download, at <link ref="#url http://www.stevefryatt.org.uk/software">http://www.stevefryatt.org.uk/software</link>
+The source for <cite>Tokenize</cite> can be found on GitHub, at <link ref="#url https://github.com/steve-fryatt/tokenize">https://github.com/steve-fryatt/tokenize</link>
 
 </chapter>
 
@@ -593,7 +593,7 @@ Updates and Contacting Me
   that you find, you can email me at the address below.
 
   Updates to Tokenize and more software for RISC OS computers can be found
-  on my website at http://www.stevefryatt.org.uk/software/
+  on my website at http://www.stevefryatt.org.uk/risc-os/risc-os/
 
   Stephen Fryatt
   email: info@stevefryatt.org.uk

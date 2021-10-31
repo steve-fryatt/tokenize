@@ -2,7 +2,7 @@
 #
 # This file is part of Tokenize:
 #
-#   http://www.stevefryatt.org.uk/software/
+#   http://www.stevefryatt.org.uk/risc-os/
 #
 # Licensed under the EUPL, Version 1.2 only (the "Licence");
 # You may not use this work except in compliance with the
@@ -122,11 +122,11 @@ endif
 ifeq ($(TARGET),riscos)
   RUNIMAGE := tokenize,ff8
   README := ReadMe,fff
-  LICENSE := Licence,fff
+  LICENCE := Licence,fff
 else
   RUNIMAGE := tokenize
   README := ReadMe.txt
-  LICENSE := Licence.txt
+  LICENCE := Licence.txt
 endif
 
 
@@ -139,6 +139,7 @@ endif
 
 MANSRC := Source
 MANSPR := ManSprite
+LICSRC ?= Licence
 
 OBJS := args.o asm.o library.o msg.o parse.o proc.o string.o swi.o tokenize.o variable.o
 
@@ -179,17 +180,19 @@ $(OUTDIR):
 
 # Build the documentation
 
-documentation: $(OUTDIR) $(OUTDIR)/$(README)
+documentation: $(OUTDIR) $(OUTDIR)/$(README) $(OUTDIR)/$(LICENCE)
 
 $(OUTDIR)/$(README): $(MANUAL)/$(MANSRC)
 	$(MANTOOLS) -MTEXT -I$(MANUAL)/$(MANSRC) -O$(OUTDIR)/$(README) -D'version=$(HELP_VERSION)' -D'date=$(HELP_DATE)'
 
+$(OUTDIR)/$(LICENCE): $(LICSRC)
+	$(CP) $(LICSRC) $(OUTDIR)/$(LICENCE)
 
 # Build the release Zip file.
 
 release: clean all
 	$(RM) ../$(ZIPFILE)
-	(cd $(OUTDIR) ; $(ZIP) $(ZIPFLAGS) ../../$(ZIPFILE) $(RUNIMAGE) $(README) $(LICENSE))
+	(cd $(OUTDIR) ; $(ZIP) $(ZIPFLAGS) ../../$(ZIPFILE) $(RUNIMAGE) $(README) $(LICENCE))
 	$(RM) ../$(SRCZIPFILE)
 	$(ZIP) $(SRCZIPFLAGS) ../$(SRCZIPFILE) $(OUTDIRLINUX) $(OUTDIRRO) $(SRCDIR) $(MANUAL) Makefile
 
@@ -213,4 +216,4 @@ clean:
 	$(RM) $(OBJDIR)/*
 	$(RM) $(OUTDIR)/$(RUNIMAGE)
 	$(RM) $(OUTDIR)/$(README)
-
+	$(RM) $(OUTDIR)/$(LICENCE)

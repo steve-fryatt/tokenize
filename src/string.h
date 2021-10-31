@@ -2,7 +2,7 @@
  *
  * This file is part of Tokenize:
  *
- *   http://www.stevefryatt.org.uk/software/
+ *   http://www.stevefryatt.org.uk/risc-os/
  *
  * Licensed under the EUPL, Version 1.2 only (the "Licence");
  * You may not use this work except in compliance with the

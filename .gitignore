@@ -1,6 +1,10 @@
 .vscode
+buildlinux
 buildlinux/ReadMe.txt
 buildlinux/tokenize
+buildlinux/Licence.txt
+buildro
 buildro/ReadMe,fff
 buildro/tokenize,ff8
+buildro/Licence,fff
 obj
